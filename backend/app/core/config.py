@@ -22,6 +22,16 @@ class Settings(BaseSettings):
     S3_BUCKET: str
     S3_REGION: str = "us-east-1"
 
+    # Google OAuth2
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/callback"
+
+    # JWT
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+
     # App
     SECRET_KEY: str
     DEBUG: bool = False

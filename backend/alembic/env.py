@@ -9,7 +9,7 @@ from alembic import context
 
 # Import all models so Alembic can detect them
 from app.db.postgres import Base
-from app.models import workspace, project, task, subtask, character, review_action  # noqa: F401
+from app.models import workspace, project, task, subtask, character, review_action, user  # noqa: F401
 from app.core.config import get_settings
 
 config = context.config
