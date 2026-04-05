@@ -5,6 +5,7 @@ import styles from './CharacterCard.module.css';
 interface Props {
   character: Character;
   onDelete?: (id: string) => void;
+  onClick?: () => void;
 }
 
 function initials(name: string) {
@@ -16,9 +17,9 @@ function initials(name: string) {
     .slice(0, 2);
 }
 
-export function CharacterCard({ character, onDelete }: Props) {
+export function CharacterCard({ character, onDelete, onClick }: Props) {
   return (
-    <div className={styles.card}>
+    <div className={styles.card} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
       <div className={styles.avatar}>{initials(character.name)}</div>
       <div className={styles.info}>
         <p className={styles.name}>{character.name}</p>
