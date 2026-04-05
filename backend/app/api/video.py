@@ -356,6 +356,29 @@ async def save_metadata(
     raise HTTPException(status_code=500, detail="DB error")
 
 
+# ── SA-53: Cost tracker endpoints ─────────────────────────────────────────────
+
+@router.get("/tasks/{task_id}/cost")
+async def get_task_cost(
+    task_id: str,
+    _user_id: str = Depends(get_current_user_id),
+) -> dict[str, Any]:
+    """Return itemised cost breakdown for a task."""
+    from app.services.cost_tracker import get_cost_breakdown
+    breakdown = await get_cost_breakdown(task_id)
+    return breakdown.to_dict()
+
+
+@router.get("/workspaces/{workspace_id}/cost")
+async def get_workspace_cost(
+    workspace_id: str,
+    _user_id: str = Depends(get_current_user_id),
+) -> dict[str, Any]:
+    """Return daily/monthly spend totals and budget alerts for a workspace."""
+    from app.services.cost_tracker import get_workspace_spend_summary
+    return await get_workspace_spend_summary(workspace_id)
+
+
 # ── SA-45: Analytics endpoints ────────────────────────────────────────────────
 
 @router.get("/tasks/{task_id}/analytics")
