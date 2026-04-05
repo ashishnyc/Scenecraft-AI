@@ -100,3 +100,53 @@ export async function saveMetadata(taskId: string, data: YoutubeMetadata): Promi
   const res = await apiClient.put<{ youtube_metadata: YoutubeMetadata }>(`/tasks/${taskId}/metadata`, data);
   return res.data.youtube_metadata;
 }
+
+// ── SA-45: Analytics ─────────────────────────────────────────────────────────
+
+export interface RetentionPoint {
+  date: string;
+  views: number;
+  likes: number;
+  view_growth_pct: number;
+}
+
+export interface TaskAnalytics {
+  task_id: string;
+  youtube_video_id: string | null;
+  latest: { views?: number; likes?: number; comments?: number };
+  retention_curve: RetentionPoint[];
+  total_cost_usd: string;
+}
+
+export interface VideoSummary {
+  task_id: string;
+  title: string;
+  youtube_video_id: string | null;
+  views: number;
+  likes: number;
+  cost_usd: string;
+}
+
+export interface WorkspaceAnalyticsSummary {
+  workspace_id: string;
+  published_count: number;
+  total_views: number;
+  total_likes: number;
+  total_cost_usd: number;
+  videos: VideoSummary[];
+}
+
+export async function getTaskAnalytics(taskId: string): Promise<TaskAnalytics> {
+  const res = await apiClient.get<TaskAnalytics>(`/tasks/${taskId}/analytics`);
+  return res.data;
+}
+
+export async function pollAnalyticsNow(taskId: string): Promise<{ snapshot: Record<string, unknown> }> {
+  const res = await apiClient.post(`/tasks/${taskId}/analytics/poll`);
+  return res.data;
+}
+
+export async function getWorkspaceAnalyticsSummary(workspaceId: string): Promise<WorkspaceAnalyticsSummary> {
+  const res = await apiClient.get<WorkspaceAnalyticsSummary>(`/workspaces/${workspaceId}/analytics/summary`);
+  return res.data;
+}
