@@ -1,13 +1,26 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { vi, beforeEach } from 'vitest';
 import { AuthProvider } from '../context/AuthContext';
+import { WorkspaceProvider } from '../context/WorkspaceContext';
 import { Sidebar } from '../components/Sidebar';
+import { apiClient } from '../api/client';
+
+vi.mock('../api/client', () => ({
+  apiClient: { get: vi.fn() },
+}));
+
+beforeEach(() => {
+  vi.mocked(apiClient.get).mockResolvedValue({ data: [] });
+});
 
 function renderSidebar() {
   return render(
     <MemoryRouter>
       <AuthProvider>
-        <Sidebar />
+        <WorkspaceProvider>
+          <Sidebar />
+        </WorkspaceProvider>
       </AuthProvider>
     </MemoryRouter>
   );
@@ -25,7 +38,7 @@ test('renders all navigation items', () => {
 
 test('renders workspace switcher', () => {
   renderSidebar();
-  expect(screen.getByText(/My Workspace/)).toBeInTheDocument();
+  expect(screen.getByText(/No workspace|Channel/)).toBeInTheDocument();
 });
 
 test('renders sign out button', () => {
