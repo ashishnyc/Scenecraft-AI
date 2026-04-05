@@ -15,6 +15,7 @@ from app.api.projects import router as projects_router
 from app.api.tasks import router as tasks_router
 from app.api.subtasks import router as subtasks_router
 from app.api.ws import router as ws_router
+from app.api.characters import router as characters_router
 
 
 @asynccontextmanager
@@ -47,6 +48,7 @@ app.include_router(projects_router)
 app.include_router(tasks_router)
 app.include_router(subtasks_router)
 app.include_router(ws_router)
+app.include_router(characters_router)
 
 
 @app.get("/health")
