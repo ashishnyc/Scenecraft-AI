@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     # NewsAPI
     NEWS_API_KEY: str = ""
 
+    # Anthropic (Claude)
+    ANTHROPIC_API_KEY: str = ""
+
     # JWT
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
