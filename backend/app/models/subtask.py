@@ -43,6 +43,7 @@ class Subtask(Base):
     cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(10, 4), nullable=True)
     output_artifacts: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     error_log: Mapped[str | None] = mapped_column(Text, nullable=True)
+    depends_on: Mapped[list | None] = mapped_column(JSONB, nullable=True)  # list of subtask UUID strings
 
     task: Mapped["Task"] = relationship("Task", back_populates="subtasks")
     review_actions: Mapped[list["ReviewAction"]] = relationship("ReviewAction", back_populates="subtask")
