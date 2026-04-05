@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import {
-  DndContext, DragEndEvent, DragOverlay, DragStartEvent,
+  DndContext, DragOverlay,
   PointerSensor, useSensor, useSensors, closestCorners,
   useDroppable, useDraggable,
 } from '@dnd-kit/core';
 import { useWorkspace } from '../context/WorkspaceContext';
-import {
-  Task, TaskStatus, TASK_STATUSES, STATUS_LABELS,
-  fetchTasksForWorkspace, transitionTask,
-} from '../api/tasks';
+import { useProject } from '../context/ProjectContext';
+import type { Task, TaskStatus } from '../api/tasks';
+import { TASK_STATUSES, STATUS_LABELS, fetchTasksForWorkspace, transitionTask } from '../api/tasks';
 import { Toast } from '../components/Toast';
 import styles from './Tasks.module.css';
 
@@ -49,6 +49,7 @@ function DroppableColumn({ status, tasks }: { status: TaskStatus; tasks: Task[] 
 
 export default function Tasks() {
   const { currentWorkspace } = useWorkspace();
+  const { currentProject } = useProject();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -69,8 +70,12 @@ export default function Tasks() {
 
   useEffect(() => { load(); }, [load]);
 
+  const visibleTasks = currentProject
+    ? tasks.filter((t) => t.project_id === currentProject.id)
+    : tasks;
+
   const tasksByStatus = TASK_STATUSES.reduce<Record<TaskStatus, Task[]>>((acc, s) => {
-    acc[s] = tasks.filter((t) => t.status === s);
+    acc[s] = visibleTasks.filter((t) => t.status === s);
     return acc;
   }, {} as Record<TaskStatus, Task[]>);
 
@@ -105,7 +110,7 @@ export default function Tasks() {
   return (
     <main className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Tasks</h1>
+        <h1 className={styles.title}>{currentProject ? currentProject.name : 'All Tasks'}</h1>
       </div>
 
       {loading ? (
