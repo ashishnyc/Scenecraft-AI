@@ -6,7 +6,7 @@ export default function Login() {
 
   const handleGoogleLogin = () => {
     // Redirect to backend Google OAuth flow
-    window.location.href = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/auth/login`;
+    window.location.href = `${import.meta.env.VITE_API_URL ?? ''}/api/auth/login`;
   };
 
   // Dev only: backend has DEV_AUTO_LOGIN=true so it ignores the token value.
