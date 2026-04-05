@@ -250,7 +250,17 @@ async def transition_task(
 
     # Trigger video production pipeline when entering producing state
     if body.status == TaskStatus.producing:
-        background_tasks.add_task(_run_video_pipeline, task.id)
+        # Check if this is a re-edit (flagged shots exist from Gate 2 review)
+        script = task.script or {}
+        flagged = (script.get("video_review") or {}).get("flagged_shot_indices", [])
+        if flagged and old_status == TaskStatus.final_review:
+            background_tasks.add_task(_run_scene_re_edit, task.id)
+        else:
+            background_tasks.add_task(_run_video_pipeline, task.id)
+
+    # Trigger YouTube upload when task moves to scheduled
+    if body.status == TaskStatus.scheduled:
+        background_tasks.add_task(_run_youtube_upload, task.id)
 
     return task
 
@@ -518,3 +528,70 @@ async def _run_video_pipeline(task_id: uuid.UUID) -> None:
                         )
                 except Exception as exc:
                     logger.warning("Could not auto-advance to final_review (task %s): %s", task_id, exc)
+
+
+async def _run_scene_re_edit(task_id: uuid.UUID) -> None:
+    """SA-41: Re-generate only flagged shots and re-assemble the video."""
+    from app.services.scene_re_editor import re_edit_flagged_scenes
+    logger.info("Starting scene re-edit for task %s", task_id)
+    try:
+        quality_report = await re_edit_flagged_scenes(str(task_id))
+        if quality_report and quality_report.get("passed"):
+            # Auto-advance back to final_review
+            from app.db.postgres import AsyncSessionLocal
+            from app.models.project import Project
+            async with AsyncSessionLocal() as db:
+                task = await db.get(Task, task_id)
+                if task:
+                    task.status = TaskStatus.final_review
+                    await db.commit()
+                    project = await db.get(Project, task.project_id)
+                    if project:
+                        from app.services.pubsub import publish_task_event
+                        workspace = await db.get(Workspace, project.workspace_id)
+                        if workspace:
+                            await publish_task_event(
+                                task_id=str(task_id),
+                                status=TaskStatus.final_review.value,
+                                workspace_id=str(workspace.id),
+                            )
+    except Exception as exc:
+        logger.error("Scene re-edit failed for task %s: %s", task_id, exc)
+
+
+async def _run_youtube_upload(task_id: uuid.UUID) -> None:
+    """SA-43/SA-44: Schedule then upload final video + metadata + thumbnail to YouTube."""
+    from app.services.youtube_uploader import upload_to_youtube
+    from app.services.upload_scheduler import schedule_upload
+    logger.info("Starting YouTube upload for task %s", task_id)
+    try:
+        schedule_info = await schedule_upload(str(task_id))
+        logger.info("Upload schedule for task %s: %s", task_id, schedule_info)
+    except Exception as exc:
+        logger.warning("Upload scheduling failed for task %s: %s", task_id, exc)
+    try:
+        video_id = await upload_to_youtube(str(task_id))
+        if video_id:
+            from app.db.postgres import AsyncSessionLocal
+            from app.models.project import Project
+            async with AsyncSessionLocal() as db:
+                task = await db.get(Task, task_id)
+                if task:
+                    task.youtube_video_id = video_id
+                    task.status = TaskStatus.published
+                    await db.commit()
+                    project = await db.get(Project, task.project_id)
+                    if project:
+                        from app.services.pubsub import publish_task_event
+                        workspace = await db.get(Workspace, project.workspace_id)
+                        if workspace:
+                            await publish_task_event(
+                                task_id=str(task_id),
+                                status=TaskStatus.published.value,
+                                workspace_id=str(workspace.id),
+                            )
+            logger.info("Task %s published to YouTube: %s", task_id, video_id)
+        else:
+            logger.warning("YouTube upload returned no video_id for task %s", task_id)
+    except Exception as exc:
+        logger.error("YouTube upload failed for task %s: %s", task_id, exc)
