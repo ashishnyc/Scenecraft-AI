@@ -1,4 +1,4 @@
-"""Video endpoints — SA-37: HLS preview, SA-39: thumbnail selector, SA-40: metadata editor."""
+"""Video endpoints — SA-37: HLS preview, SA-39: thumbnail selector, SA-40: metadata editor, SA-45: analytics."""
 from __future__ import annotations
 
 import os
@@ -352,5 +352,106 @@ async def save_metadata(
         db.add(row)
         await db.commit()
         return {"task_id": task_id, "youtube_metadata": script["youtube_metadata"]}
+
+    raise HTTPException(status_code=500, detail="DB error")
+
+
+# ── SA-45: Analytics endpoints ────────────────────────────────────────────────
+
+@router.get("/tasks/{task_id}/analytics")
+async def get_task_analytics(
+    task_id: str,
+    _user_id: str = Depends(get_current_user_id),
+) -> dict[str, Any]:
+    """Return performance metrics + computed retention curve for a published task."""
+    from app.db.postgres import get_db as _get_db
+    from app.models.task import Task as _Task
+    from app.services.analytics_tracker import compute_retention_curve
+    from sqlalchemy import select as _select
+
+    async for db in _get_db():
+        row = (await db.execute(_select(_Task).where(_Task.id == task_id))).scalar_one_or_none()
+        if not row:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        metrics = row.performance_metrics or {}
+        return {
+            "task_id": task_id,
+            "youtube_video_id": row.youtube_video_id,
+            "latest": metrics.get("latest", {}),
+            "retention_curve": compute_retention_curve(metrics),
+            "total_cost_usd": str(row.total_cost_usd or "0.00"),
+        }
+
+    raise HTTPException(status_code=500, detail="DB error")
+
+
+@router.post("/tasks/{task_id}/analytics/poll")
+async def poll_analytics_now(
+    task_id: str,
+    _user_id: str = Depends(get_current_user_id),
+) -> dict[str, Any]:
+    """Force an immediate analytics poll for a task."""
+    from app.services.analytics_tracker import poll_video_analytics
+    snapshot = await poll_video_analytics(task_id)
+    if snapshot is None:
+        raise HTTPException(status_code=503, detail="Analytics poll failed or video not published")
+    return {"task_id": task_id, "snapshot": snapshot}
+
+
+@router.get("/workspaces/{workspace_id}/analytics/summary")
+async def get_workspace_analytics_summary(
+    workspace_id: str,
+    _user_id: str = Depends(get_current_user_id),
+) -> dict[str, Any]:
+    """Aggregate analytics across all published tasks in a workspace."""
+    from app.db.postgres import get_db as _get_db
+    from app.models.task import Task as _Task
+    from app.models.project import Project as _Project
+    from sqlalchemy import select as _select
+
+    async for db in _get_db():
+        projects = (await db.execute(
+            _select(_Project).where(_Project.workspace_id == workspace_id)
+        )).scalars().all()
+        project_ids = [str(p.id) for p in projects]
+
+        tasks = (await db.execute(
+            _select(_Task).where(
+                _Task.project_id.in_(project_ids),
+                _Task.status == "published",
+            )
+        )).scalars().all()
+
+        total_views = 0
+        total_likes = 0
+        total_cost = 0.0
+        per_video = []
+
+        for t in tasks:
+            metrics = t.performance_metrics or {}
+            latest = metrics.get("latest", {})
+            views = latest.get("views", 0)
+            likes = latest.get("likes", 0)
+            total_views += views
+            total_likes += likes
+            total_cost += float(t.total_cost_usd or 0)
+            per_video.append({
+                "task_id": str(t.id),
+                "title": t.title,
+                "youtube_video_id": t.youtube_video_id,
+                "views": views,
+                "likes": likes,
+                "cost_usd": str(t.total_cost_usd or "0.00"),
+            })
+
+        return {
+            "workspace_id": workspace_id,
+            "published_count": len(tasks),
+            "total_views": total_views,
+            "total_likes": total_likes,
+            "total_cost_usd": round(total_cost, 4),
+            "videos": sorted(per_video, key=lambda x: x["views"], reverse=True),
+        }
 
     raise HTTPException(status_code=500, detail="DB error")

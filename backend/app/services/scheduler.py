@@ -82,6 +82,26 @@ async def _daily_competitor_scrape() -> None:
             logger.error("Competitor scrape failed for workspace %s: %s", ws.id, exc)
 
 
+async def _daily_analytics_poll() -> None:
+    """SA-45: Poll YouTube analytics for all published tasks."""
+    from app.services.analytics_tracker import poll_all_published_tasks
+    try:
+        count = await poll_all_published_tasks()
+        logger.info("Analytics poll: updated %d tasks", count)
+    except Exception as exc:
+        logger.error("Analytics poll failed: %s", exc)
+
+
+async def _daily_feedback_loop() -> None:
+    """SA-47: Store performance vectors in Qdrant for content intelligence."""
+    from app.services.feedback_loop import run_feedback_loop_for_all
+    try:
+        count = await run_feedback_loop_for_all()
+        logger.info("Feedback loop: processed %d tasks", count)
+    except Exception as exc:
+        logger.error("Feedback loop failed: %s", exc)
+
+
 def start_scheduler() -> AsyncIOScheduler:
     global _scheduler
     _scheduler = AsyncIOScheduler()
@@ -101,6 +121,20 @@ def start_scheduler() -> AsyncIOScheduler:
         _daily_pitch_generation,
         trigger=CronTrigger(hour=5, minute=0),
         id="daily_pitch_generation",
+        replace_existing=True,
+    )
+    # SA-45: Poll YouTube analytics for all published tasks daily at 06:00 UTC
+    _scheduler.add_job(
+        _daily_analytics_poll,
+        trigger=CronTrigger(hour=6, minute=0),
+        id="daily_analytics_poll",
+        replace_existing=True,
+    )
+    # SA-47: Run feedback loop (performance vectors → Qdrant) daily at 07:00 UTC
+    _scheduler.add_job(
+        _daily_feedback_loop,
+        trigger=CronTrigger(hour=7, minute=0),
+        id="daily_feedback_loop",
         replace_existing=True,
     )
     _scheduler.start()
