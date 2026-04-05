@@ -112,6 +112,16 @@ async def _daily_feedback_loop() -> None:
         logger.error("Feedback loop failed: %s", exc)
 
 
+async def _instagram_publish_due() -> None:
+    """SA-65: Publish scheduled Instagram posts that are due."""
+    from app.services.instagram_pipeline import publish_due_posts
+    try:
+        count = await publish_due_posts()
+        logger.info("Instagram: published %d due posts", count)
+    except Exception as exc:
+        logger.error("Instagram publish job failed: %s", exc)
+
+
 def start_scheduler() -> AsyncIOScheduler:
     global _scheduler
     _scheduler = AsyncIOScheduler()
@@ -152,6 +162,13 @@ def start_scheduler() -> AsyncIOScheduler:
         _daily_feedback_loop,
         trigger=CronTrigger(hour=7, minute=0),
         id="daily_feedback_loop",
+        replace_existing=True,
+    )
+    # SA-65: Publish due Instagram posts every 15 minutes
+    _scheduler.add_job(
+        _instagram_publish_due,
+        trigger=CronTrigger(minute="*/15"),
+        id="instagram_publish_due",
         replace_existing=True,
     )
     _scheduler.start()

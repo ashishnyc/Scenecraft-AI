@@ -12,6 +12,7 @@ import VideoReview from './pages/VideoReview';
 import PublishWorkflow from './pages/PublishWorkflow';
 import Talent from './pages/Talent';
 import Analytics from './pages/Analytics';
+import Instagram from './pages/Instagram';
 import Settings from './pages/Settings';
 import ProjectDetail from './pages/ProjectDetail';
 import Login from './pages/Login';
@@ -79,6 +80,7 @@ function AppLayout() {
             <Route path="/publish"   element={<PublishWorkflow />} />
             <Route path="/talent"    element={<Talent />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/instagram" element={<Instagram />} />
             <Route path="/settings"  element={<Settings />} />
             <Route path="*"          element={<Navigate to="/" replace />} />
           </Routes>

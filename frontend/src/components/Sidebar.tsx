@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { to: '/publish',      label: 'Publish',       icon: '🚀' },
   { to: '/talent',       label: 'Talent Roster', icon: '🎭' },
   { to: '/analytics',    label: 'Analytics',     icon: '📊' },
+  { to: '/instagram',    label: 'Instagram',     icon: '📸' },
   { to: '/settings',     label: 'Settings',      icon: '⚙️' },
 ];
 
