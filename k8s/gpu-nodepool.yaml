@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scenecraft-gpu-worker
+  namespace: scenecraft
+  labels:
+    app: scenecraft-gpu-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scenecraft-gpu-worker
+  template:
+    metadata:
+      labels:
+        app: scenecraft-gpu-worker
+    spec:
+      # Schedule exclusively on GPU nodes
+      nodeSelector:
+        cloud.google.com/gke-accelerator: nvidia-l4
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      containers:
+        - name: gpu-worker
+          image: scenecraft/backend:latest
+          command: ["python", "-m", "app.services.temporal_worker"]
+          envFrom:
+            - secretRef:
+                name: scenecraft-secrets
+          env:
+            - name: TEMPORAL_HOST
+              value: "temporal-frontend.temporal.svc.cluster.local:7233"
+            - name: GPU_WORKER
+              value: "true"
+          resources:
+            requests:
+              cpu: "2"
+              memory: "8Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: "16Gi"
+              nvidia.com/gpu: "1"
+---
+# HorizontalPodAutoscaler for GPU workers (scale 1→4 based on Temporal queue depth)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: scenecraft-gpu-worker-hpa
+  namespace: scenecraft
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: scenecraft-gpu-worker
+  minReplicas: 0
+  maxReplicas: 4
+  metrics:
+    - type: External
+      external:
+        metric:
+          name: temporal_workflow_task_queue_depth
+          selector:
+            matchLabels:
+              task_queue: video-production
+        target:
+          type: AverageValue
+          averageValue: "5"

@@ -82,6 +82,16 @@ async def _daily_competitor_scrape() -> None:
             logger.error("Competitor scrape failed for workspace %s: %s", ws.id, exc)
 
 
+async def _daily_asset_lifecycle() -> None:
+    """SA-51: Archive/delete old task assets to manage S3 costs."""
+    from app.services.asset_lifecycle import run_lifecycle_for_all_tasks
+    try:
+        result = await run_lifecycle_for_all_tasks()
+        logger.info("Asset lifecycle: %s", result)
+    except Exception as exc:
+        logger.error("Asset lifecycle failed: %s", exc)
+
+
 async def _daily_analytics_poll() -> None:
     """SA-45: Poll YouTube analytics for all published tasks."""
     from app.services.analytics_tracker import poll_all_published_tasks
@@ -121,6 +131,13 @@ def start_scheduler() -> AsyncIOScheduler:
         _daily_pitch_generation,
         trigger=CronTrigger(hour=5, minute=0),
         id="daily_pitch_generation",
+        replace_existing=True,
+    )
+    # SA-51: Asset lifecycle — archive/delete old S3 objects daily at 02:00 UTC
+    _scheduler.add_job(
+        _daily_asset_lifecycle,
+        trigger=CronTrigger(hour=2, minute=0),
+        id="daily_asset_lifecycle",
         replace_existing=True,
     )
     # SA-45: Poll YouTube analytics for all published tasks daily at 06:00 UTC

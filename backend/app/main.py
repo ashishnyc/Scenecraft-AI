@@ -22,11 +22,13 @@ from app.api.pitches import router as pitches_router
 from app.api.audio import router as audio_router
 from app.api.video import router as video_router
 from app.services.scheduler import start_scheduler, stop_scheduler
+from app.core.security import add_security_headers, validate_secrets_at_startup
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    validate_secrets_at_startup()
     get_redis()
     start_scheduler()
     yield
@@ -41,6 +43,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.middleware("http")(add_security_headers)
 
 app.add_middleware(
     CORSMiddleware,
