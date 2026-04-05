@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     # YouTube Data API
     YOUTUBE_API_KEY: str = ""
 
+    # Reddit API (PRAW)
+    REDDIT_CLIENT_ID: str = ""
+    REDDIT_CLIENT_SECRET: str = ""
+
+    # NewsAPI
+    NEWS_API_KEY: str = ""
+
     # JWT
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
