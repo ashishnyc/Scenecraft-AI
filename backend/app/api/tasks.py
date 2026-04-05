@@ -89,11 +89,13 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
     Stage 4 — copyright scan (rewrites flagged scenes in-place)
     """
     from app.db.postgres import AsyncSessionLocal
+    from app.models.project import ProjectType
     from app.models.workspace import Workspace
     from app.services.consistency_checker import check_consistency
     from app.services.copyright_scanner import scan_copyright
     from app.services.outline_generator import generate_outline
     from app.services.scene_expander import expand_scenes
+    from app.services.story_bible import blank_bible
 
     async with AsyncSessionLocal() as db:
         task = await db.get(Task, task_id)
@@ -116,6 +118,11 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
         workspace = await db.get(Workspace, project.workspace_id)
         style_guide = (workspace.style_guide or {}) if workspace else {}
 
+        # Inject story bible for serialised projects (SA-23)
+        story_bible = None
+        if project.type == ProjectType.serialised:
+            story_bible = project.story_bible or blank_bible()
+
         # Stage 1 — outline
         outline = await generate_outline(
             task_id=str(task.id),
@@ -123,6 +130,7 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
             creator_notes=task.creator_notes,
             style_guide=style_guide,
             cast_names=cast_names,
+            story_bible=story_bible,
         )
         if outline is None:
             return
@@ -222,4 +230,39 @@ async def transition_task(
     if body.status == TaskStatus.scripting:
         background_tasks.add_task(_run_outline_for_task, task.id)
 
+    # Update story bible when script is approved (script_review → producing)
+    if old_status == TaskStatus.script_review and body.status == TaskStatus.producing:
+        background_tasks.add_task(_update_story_bible_for_task, task.id)
+
     return task
+
+
+async def _update_story_bible_for_task(task_id: uuid.UUID) -> None:
+    """Background job: extract episode events and update the project's story bible."""
+    from app.db.postgres import AsyncSessionLocal
+    from app.models.project import ProjectType
+    from app.services.story_bible import extract_episode_events, merge_bible
+
+    async with AsyncSessionLocal() as db:
+        task = await db.get(Task, task_id)
+        if task is None:
+            return
+
+        project = await db.get(Project, task.project_id)
+        if project is None or project.type != ProjectType.serialised:
+            return
+
+        full_script = (task.script or {}).get("full_script")
+        if not full_script:
+            return
+
+        episode_number = len((project.story_bible or {}).get("previous_episodes", [])) + 1
+        new_events = await extract_episode_events(
+            task_id=str(task.id),
+            full_script=full_script,
+            existing_bible=project.story_bible,
+            episode_number=episode_number,
+        )
+        if new_events is not None:
+            project.story_bible = merge_bible(project.story_bible, new_events)
+            await db.commit()

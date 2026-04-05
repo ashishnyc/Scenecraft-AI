@@ -82,10 +82,25 @@ def _build_prompt(
     creator_notes: str | None,
     style_guide: dict,
     cast_names: list[str],
+    story_bible: dict | None = None,
 ) -> str:
     cast_text = ", ".join(cast_names) if cast_names else "No cast defined — leave characters_present empty"
     notes_text = creator_notes or "None"
     style_text = json.dumps(style_guide, indent=2) if style_guide else "Not specified"
+
+    bible_section = ""
+    if story_bible:
+        char_states = story_bible.get("character_states", {})
+        open_threads = [t for t in story_bible.get("plot_threads", []) if t.get("status") == "open"]
+        world_building = story_bible.get("world_building", [])
+        prev_eps = story_bible.get("previous_episodes", [])
+        bible_section = f"""
+Series continuity (story bible):
+  Character states: {json.dumps(char_states) if char_states else "None yet"}
+  Open plot threads: {json.dumps(open_threads) if open_threads else "None"}
+  World-building rules: {"; ".join(world_building) if world_building else "None"}
+  Previous episodes: {len(prev_eps)} episode(s) — last: {prev_eps[-1].get("summary", "") if prev_eps else "N/A"}
+"""
 
     return f"""\
 Concept brief:
@@ -98,7 +113,7 @@ Style guide:
 {style_text}
 
 Available cast: {cast_text}
-
+{bible_section}
 Generate the 3-act outline now.
 """
 
@@ -137,9 +152,11 @@ async def generate_outline(
     creator_notes: str | None,
     style_guide: dict,
     cast_names: list[str],
+    story_bible: dict | None = None,
 ) -> dict[str, Any] | None:
     """
     Call Claude to produce a 3-act outline for the given task.
+    For serialised projects, pass *story_bible* to inject series continuity.
     Returns the validated outline dict, or None on failure.
     """
     settings = get_settings()
@@ -151,7 +168,7 @@ async def generate_outline(
     import anthropic
     client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
 
-    user_prompt = _build_prompt(concept_brief, creator_notes, style_guide, cast_names)
+    user_prompt = _build_prompt(concept_brief, creator_notes, style_guide, cast_names, story_bible)
 
     try:
         message = client.messages.create(
