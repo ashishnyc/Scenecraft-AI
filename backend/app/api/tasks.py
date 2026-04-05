@@ -1,6 +1,9 @@
 """Task CRUD and lifecycle state machine endpoints."""
+import logging
 import uuid
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+
+logger = logging.getLogger(__name__)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -230,11 +233,122 @@ async def transition_task(
     if body.status == TaskStatus.scripting:
         background_tasks.add_task(_run_outline_for_task, task.id)
 
+    # Trigger audio pipeline when entering audio_preview state
+    if body.status == TaskStatus.audio_preview:
+        changed_scenes: set[int] | None = (
+            set(body.changed_scene_numbers) if getattr(body, "changed_scene_numbers", None) else None
+        )
+        background_tasks.add_task(_run_audio_pipeline, task.id, changed_scenes)
+
+    # Mark audio stems as approved when script is approved (audio_preview → script_review)
+    if old_status == TaskStatus.audio_preview and body.status == TaskStatus.script_review:
+        background_tasks.add_task(_approve_audio_stems, task.id)
+
     # Update story bible when script is approved (script_review → producing)
     if old_status == TaskStatus.script_review and body.status == TaskStatus.producing:
         background_tasks.add_task(_update_story_bible_for_task, task.id)
 
     return task
+
+
+async def _run_audio_pipeline(task_id: uuid.UUID, changed_scenes: set[int] | None) -> None:
+    """Background job: voice routing → synthesis → assembly.
+
+    When *changed_scenes* is provided (selective re-generation, SA-28), only
+    those scenes are re-synthesised; existing stems for other scenes are reused.
+    """
+    from decimal import Decimal
+    from app.db.postgres import AsyncSessionLocal
+    from app.models.workspace import Workspace
+    from app.services.audio_assembler import assemble_audio
+    from app.services.voice_router import build_routing_manifest
+    from app.services.voice_synthesizer import synthesize_manifest
+
+    async with AsyncSessionLocal() as db:
+        task = await db.get(Task, task_id)
+        if task is None:
+            return
+
+        script = task.script or {}
+        full_script = script.get("full_script")
+        if not full_script:
+            logger.warning("No full_script for audio pipeline (task %s)", task_id)
+            return
+
+        project = await db.get(Project, task.project_id)
+        if project is None:
+            return
+
+        workspace = await db.get(Workspace, project.workspace_id)
+        style_guide = (workspace.style_guide or {}) if workspace else {}
+        narrator_voice_id = style_guide.get("narrator_voice_id", "narrator")
+
+        # Gather cast voice profiles
+        result = await db.execute(
+            select(Character.name, Character.voice_profile_id)
+            .join(CharacterCasting, CharacterCasting.character_id == Character.id)
+            .where(CharacterCasting.project_id == project.id)
+        )
+        cast_voice_profiles: dict[str, str | None] = {name: vid for name, vid in result.all()}
+
+        # SA-24: build routing manifest
+        routing_manifest = build_routing_manifest(full_script, cast_voice_profiles, narrator_voice_id)
+        if not routing_manifest:
+            logger.warning("Empty routing manifest for task %s", task_id)
+            return
+
+        # SA-25: synthesise (full or selective)
+        existing_stems: dict[int, str] = {}
+        if changed_scenes is not None:
+            # Reuse stems from previous run for unchanged scenes
+            existing_stems = {
+                s["line_index"]: s["s3_url"]
+                for s in script.get("audio_stems", {}).get("stems", [])
+                if s["scene_number"] not in changed_scenes
+            }
+
+        new_stems, cost = await synthesize_manifest(
+            task_id=str(task_id),
+            routing_manifest=routing_manifest,
+            scene_numbers=changed_scenes,
+        )
+        all_stems = {**existing_stems, **new_stems}
+
+        # SA-26 + SA-29: assemble and build stem registry
+        result_data = await assemble_audio(str(task_id), routing_manifest, all_stems)
+        if result_data is None:
+            return
+
+        _, stem_registry = result_data
+
+        current_script = dict(task.script or {})
+        current_script["audio_stems"] = stem_registry
+        task.script = current_script
+
+        # Accumulate cost on task
+        existing_cost = Decimal(str(task.total_cost_usd or 0))
+        task.total_cost_usd = existing_cost + cost
+
+        await db.commit()
+
+
+async def _approve_audio_stems(task_id: uuid.UUID) -> None:
+    """Mark all audio stems as approved when task moves to script_review."""
+    from app.db.postgres import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as db:
+        task = await db.get(Task, task_id)
+        if task is None:
+            return
+        script = dict(task.script or {})
+        stems_data = script.get("audio_stems")
+        if stems_data:
+            stems_data["approved"] = True
+            for stem in stems_data.get("stems", []):
+                stem["approved"] = True
+            script["audio_stems"] = stems_data
+            task.script = script
+            await db.commit()
 
 
 async def _update_story_bible_for_task(task_id: uuid.UUID) -> None:
