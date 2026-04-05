@@ -20,6 +20,7 @@ class TaskUpdate(BaseModel):
 
 class TaskTransitionRequest(BaseModel):
     status: TaskStatus
+    changed_scene_numbers: list[int] | None = None  # SA-28: selective audio re-generation
 
 
 class TaskResponse(BaseModel):

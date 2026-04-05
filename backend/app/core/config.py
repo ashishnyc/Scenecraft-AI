@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     # Anthropic (Claude)
     ANTHROPIC_API_KEY: str = ""
 
+    # Voice synthesis (SA-25)
+    ELEVENLABS_API_KEY: str = ""
+    FISH_AUDIO_API_KEY: str = ""
+
     # Qdrant vector DB
     QDRANT_URL: str = ""        # empty = in-memory
     QDRANT_API_KEY: str = ""
