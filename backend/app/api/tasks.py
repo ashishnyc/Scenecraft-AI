@@ -81,10 +81,16 @@ async def update_task(
 
 
 async def _run_outline_for_task(task_id: uuid.UUID) -> None:
-    """Background job: generate outline and store it in task.script['outline']."""
+    """Background job: stage 1+2 of the script pipeline.
+
+    Generates the 3-act outline (stage 1) then immediately expands every
+    scene into full screenplay format (stage 2), storing both results in
+    task.script.
+    """
     from app.db.postgres import AsyncSessionLocal
     from app.models.workspace import Workspace
     from app.services.outline_generator import generate_outline
+    from app.services.scene_expander import expand_scenes
 
     async with AsyncSessionLocal() as db:
         task = await db.get(Task, task_id)
@@ -95,17 +101,19 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
         if project is None:
             return
 
-        # Gather cast names from the project's character castings
+        # Gather cast profiles (name → personality_prompt) from the project's castings
         result = await db.execute(
-            select(Character.name)
+            select(Character.name, Character.personality_prompt)
             .join(CharacterCasting, CharacterCasting.character_id == Character.id)
             .where(CharacterCasting.project_id == project.id)
         )
-        cast_names = list(result.scalars().all())
+        cast_profiles: dict[str, str | None] = {name: prompt for name, prompt in result.all()}
+        cast_names = list(cast_profiles.keys())
 
         workspace = await db.get(Workspace, project.workspace_id)
         style_guide = (workspace.style_guide or {}) if workspace else {}
 
+        # Stage 1 — outline
         outline = await generate_outline(
             task_id=str(task.id),
             concept_brief=task.concept_brief or "",
@@ -113,9 +121,23 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
             style_guide=style_guide,
             cast_names=cast_names,
         )
-        if outline is not None:
+        if outline is None:
+            return
+
+        current_script = dict(task.script or {})
+        current_script["outline"] = outline
+        task.script = current_script
+        await db.commit()
+
+        # Stage 2 — scene expansion
+        full_script = await expand_scenes(
+            task_id=str(task.id),
+            outline=outline,
+            cast_profiles=cast_profiles,
+        )
+        if full_script is not None:
             current_script = dict(task.script or {})
-            current_script["outline"] = outline
+            current_script["full_script"] = full_script
             task.script = current_script
             await db.commit()
 
