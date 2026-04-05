@@ -248,6 +248,10 @@ async def transition_task(
     if old_status == TaskStatus.script_review and body.status == TaskStatus.producing:
         background_tasks.add_task(_update_story_bible_for_task, task.id)
 
+    # Trigger video production pipeline when entering producing state
+    if body.status == TaskStatus.producing:
+        background_tasks.add_task(_run_video_pipeline, task.id)
+
     return task
 
 
@@ -380,3 +384,137 @@ async def _update_story_bible_for_task(task_id: uuid.UUID) -> None:
         if new_events is not None:
             project.story_bible = merge_bible(project.story_bible, new_events)
             await db.commit()
+
+
+async def _run_video_pipeline(task_id: uuid.UUID) -> None:
+    """Background job: SA-30 through SA-36 video production pipeline.
+
+    SA-30 — plan shots → shot_list
+    SA-31 — build character reference prompts
+    SA-32 — generate environment plates
+    SA-33 — generate video clips (batched)
+    SA-34 — generate music tracks
+    SA-35 — assemble final video
+    SA-36 — quality check; auto-advances to final_review on pass
+    """
+    from decimal import Decimal
+    from app.db.postgres import AsyncSessionLocal
+    from app.models.workspace import Workspace
+    from app.services.character_consistency import build_cast_reference_prompts
+    from app.services.environment_generator import generate_environment_plates
+    from app.services.music_generator import generate_music
+    from app.services.scene_planner import plan_shots
+    from app.services.video_assembler import assemble_video
+    from app.services.video_clip_generator import generate_clips
+    from app.services.video_quality_checker import check_quality
+
+    async with AsyncSessionLocal() as db:
+        task = await db.get(Task, task_id)
+        if task is None:
+            return
+
+        script = task.script or {}
+        full_script = script.get("full_script")
+        if not full_script:
+            logger.warning("No full_script for video pipeline (task %s)", task_id)
+            return
+
+        audio_stems = script.get("audio_stems")
+        project = await db.get(Project, task.project_id)
+        if project is None:
+            return
+
+        # Gather cast for character consistency (SA-31)
+        result = await db.execute(
+            select(
+                Character.name,
+                Character.personality_prompt,
+                Character.visual_references,
+                CharacterCasting.appearance_override,
+            )
+            .join(CharacterCasting, CharacterCasting.character_id == Character.id)
+            .where(CharacterCasting.project_id == project.id)
+        )
+        cast = [
+            {"name": name, "personality_prompt": pp, "visual_references": vr, "appearance_override": ao}
+            for name, pp, vr, ao in result.all()
+        ]
+        reference_prompts = build_cast_reference_prompts(cast)
+
+        # SA-30: plan shots
+        shot_list = await plan_shots(str(task_id), full_script, audio_stems)
+        if shot_list is None:
+            return
+
+        current = dict(task.script or {})
+        current["shot_list"] = shot_list
+        task.script = current
+        await db.commit()
+
+        # SA-32: environment plates
+        env_plates = await generate_environment_plates(
+            str(task_id), str(project.id), shot_list
+        )
+
+        # SA-33: video clips
+        settings_obj = __import__("app.core.config", fromlist=["get_settings"]).get_settings()
+        batch_size = getattr(settings_obj, "VIDEO_CLIP_BATCH_SIZE", 5)
+        clip_urls, clip_cost = await generate_clips(
+            str(task_id), shot_list, reference_prompts, env_plates, batch_size
+        )
+
+        current = dict(task.script or {})
+        current["video_clips"] = {str(k): v for k, v in clip_urls.items()}
+        task.script = current
+        task.total_cost_usd = (Decimal(str(task.total_cost_usd or 0)) + clip_cost)
+        await db.commit()
+
+        # SA-34: music
+        music_urls, music_cost = await generate_music(str(task_id), shot_list, audio_stems)
+
+        current = dict(task.script or {})
+        current["music_tracks"] = {str(k): v for k, v in music_urls.items()}
+        task.script = current
+        task.total_cost_usd = (Decimal(str(task.total_cost_usd or 0)) + music_cost)
+        await db.commit()
+
+        # SA-35: assemble video
+        final_url = await assemble_video(
+            task_id=str(task_id),
+            shot_list=shot_list,
+            clip_s3_urls=clip_urls,
+            audio_stems=audio_stems,
+            music_s3_urls=music_urls,
+            title=task.title,
+        )
+        if final_url is None:
+            return
+
+        task.final_video_url = final_url
+        await db.commit()
+
+        # SA-36: quality check
+        quality_report = await check_quality(str(task_id), final_url, shot_list, audio_stems)
+        if quality_report is not None:
+            current = dict(task.script or {})
+            current["quality_report"] = quality_report
+            task.script = current
+            await db.commit()
+
+            if quality_report.get("passed"):
+                # Auto-advance to final_review
+                from app.services.state_machine import validate_transition
+                try:
+                    validate_transition(task.status, TaskStatus.final_review, task)
+                    task.status = TaskStatus.final_review
+                    await db.commit()
+                    workspace = await db.get(Workspace, project.workspace_id)
+                    if workspace:
+                        from app.services.pubsub import publish_task_event
+                        await publish_task_event(
+                            task_id=str(task_id),
+                            status=TaskStatus.final_review.value,
+                            workspace_id=str(workspace.id),
+                        )
+                except Exception as exc:
+                    logger.warning("Could not auto-advance to final_review (task %s): %s", task_id, exc)
