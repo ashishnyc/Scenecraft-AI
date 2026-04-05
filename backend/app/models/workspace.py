@@ -20,3 +20,4 @@ class Workspace(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     projects: Mapped[list["Project"]] = relationship("Project", back_populates="workspace", cascade="all, delete-orphan")
+    competitor_videos: Mapped[list["CompetitorVideo"]] = relationship("CompetitorVideo", back_populates="workspace", cascade="all, delete-orphan")
