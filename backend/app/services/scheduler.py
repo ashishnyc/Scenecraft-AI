@@ -30,6 +30,33 @@ async def _daily_trend_refresh() -> None:
             logger.error("Trend refresh failed for workspace %s: %s", ws.id, exc)
 
 
+async def _daily_pitch_generation() -> None:
+    """Generate 3 pitches per workspace daily."""
+    from sqlalchemy import select
+    from app.db.postgres import AsyncSessionLocal
+    from app.models.workspace import Workspace
+    from app.models.trending_topic import TrendingTopic
+    from app.models.competitor_video import CompetitorVideo
+    from app.services.pitch_generator import generate_pitches
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Workspace))
+        workspaces = result.scalars().all()
+
+    for ws in workspaces:
+        try:
+            async with AsyncSessionLocal() as db:
+                from app.api.pitches import _build_context
+                topics, videos = await _build_context(ws.id, db)
+                saved = await generate_pitches(
+                    str(ws.id), ws.name, ws.style_guide or {},
+                    topics, videos, db, count=3,
+                )
+            logger.info("Generated %d pitches for workspace %s", len(saved), ws.id)
+        except Exception as exc:
+            logger.error("Pitch generation failed for workspace %s: %s", ws.id, exc)
+
+
 async def _daily_competitor_scrape() -> None:
     """Scrape competitor channels for every workspace that has them configured."""
     from sqlalchemy import select
@@ -68,6 +95,12 @@ def start_scheduler() -> AsyncIOScheduler:
         _daily_trend_refresh,
         trigger=CronTrigger(hour=4, minute=0),
         id="daily_trend_refresh",
+        replace_existing=True,
+    )
+    _scheduler.add_job(
+        _daily_pitch_generation,
+        trigger=CronTrigger(hour=5, minute=0),
+        id="daily_pitch_generation",
         replace_existing=True,
     )
     _scheduler.start()

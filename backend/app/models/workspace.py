@@ -22,3 +22,4 @@ class Workspace(Base):
     projects: Mapped[list["Project"]] = relationship("Project", back_populates="workspace", cascade="all, delete-orphan")
     competitor_videos: Mapped[list["CompetitorVideo"]] = relationship("CompetitorVideo", back_populates="workspace", cascade="all, delete-orphan")
     trending_topics: Mapped[list["TrendingTopic"]] = relationship("TrendingTopic", back_populates="workspace", cascade="all, delete-orphan")
+    pitches: Mapped[list["Pitch"]] = relationship("Pitch", back_populates="workspace", cascade="all, delete-orphan")

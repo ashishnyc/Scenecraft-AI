@@ -18,6 +18,7 @@ from app.api.ws import router as ws_router
 from app.api.characters import router as characters_router
 from app.api.competitor import router as competitor_router
 from app.api.trends import router as trends_router
+from app.api.pitches import router as pitches_router
 from app.services.scheduler import start_scheduler, stop_scheduler
 
 
@@ -56,6 +57,7 @@ app.include_router(ws_router)
 app.include_router(characters_router)
 app.include_router(competitor_router)
 app.include_router(trends_router)
+app.include_router(pitches_router)
 
 
 @app.get("/health")
