@@ -20,6 +20,7 @@ from app.api.competitor import router as competitor_router
 from app.api.trends import router as trends_router
 from app.api.pitches import router as pitches_router
 from app.api.audio import router as audio_router
+from app.api.video import router as video_router
 from app.services.scheduler import start_scheduler, stop_scheduler
 
 
@@ -60,6 +61,7 @@ app.include_router(competitor_router)
 app.include_router(trends_router)
 app.include_router(pitches_router)
 app.include_router(audio_router)
+app.include_router(video_router)
 
 
 @app.get("/health")

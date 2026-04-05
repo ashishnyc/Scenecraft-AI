@@ -8,12 +8,14 @@ import { createProject } from '../api/projects';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
-  { to: '/',          label: 'Dashboard',     icon: '⬛' },
-  { to: '/tasks',     label: 'Tasks',         icon: '📋' },
-  { to: '/scripts',   label: 'Script Review', icon: '📝' },
-  { to: '/talent',    label: 'Talent Roster', icon: '🎭' },
-  { to: '/analytics', label: 'Analytics',     icon: '📊' },
-  { to: '/settings',  label: 'Settings',      icon: '⚙️' },
+  { to: '/',             label: 'Dashboard',     icon: '⬛' },
+  { to: '/tasks',        label: 'Tasks',         icon: '📋' },
+  { to: '/scripts',      label: 'Script Review', icon: '📝' },
+  { to: '/video-review', label: 'Video Review',  icon: '🎬' },
+  { to: '/publish',      label: 'Publish',       icon: '🚀' },
+  { to: '/talent',       label: 'Talent Roster', icon: '🎭' },
+  { to: '/analytics',    label: 'Analytics',     icon: '📊' },
+  { to: '/settings',     label: 'Settings',      icon: '⚙️' },
 ];
 
 export function Sidebar() {
