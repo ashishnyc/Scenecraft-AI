@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.db.redis import close_redis, get_redis
 from app.db.postgres import engine
+import app.models  # noqa: F401 — registers all ORM models with SQLAlchemy
 from app.api.auth import router as auth_router
 from app.api.workspaces import router as workspaces_router
 
