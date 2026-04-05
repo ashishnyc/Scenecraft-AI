@@ -9,13 +9,21 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { useProject } from '../context/ProjectContext';
 import type { Task, TaskStatus } from '../api/tasks';
 import { TASK_STATUSES, STATUS_LABELS, fetchTasksForWorkspace, transitionTask } from '../api/tasks';
+import { useTaskEvents } from '../hooks/useTaskEvents';
 import { Toast } from '../components/Toast';
 import styles from './Tasks.module.css';
 
+// Statuses that indicate active background processing
+const ACTIVE_STATUSES = new Set<TaskStatus>(['scripting', 'audio_preview', 'producing']);
+
 function TaskCard({ task, isDragging }: { task: Task; isDragging?: boolean }) {
+  const isActive = ACTIVE_STATUSES.has(task.status);
   return (
     <div className={`${styles.card} ${isDragging ? styles.cardDragging : ''}`}>
-      <p className={styles.cardTitle}>{task.title}</p>
+      <div className={styles.cardHeader}>
+        <p className={styles.cardTitle}>{task.title}</p>
+        {isActive && <span className={styles.activeDot} title="Processing…" />}
+      </div>
       <span className={`${styles.badge} ${styles[`badge_${task.status}`]}`}>
         {STATUS_LABELS[task.status]}
       </span>
@@ -69,6 +77,16 @@ export default function Tasks() {
   }, [currentWorkspace]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Live updates from WebSocket
+  useTaskEvents(useCallback((event) => {
+    if (!currentWorkspace || event.workspace_id !== currentWorkspace.id) return;
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === event.task_id ? { ...t, status: event.status as TaskStatus } : t
+      )
+    );
+  }, [currentWorkspace]));
 
   const visibleTasks = currentProject
     ? tasks.filter((t) => t.project_id === currentProject.id)
