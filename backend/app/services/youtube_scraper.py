@@ -129,4 +129,15 @@ async def scrape_workspace(workspace_id: str, channel_ids: list[str], db) -> int
 
         await db.commit()
 
+        # Upsert embeddings into Qdrant for originality checking
+        try:
+            from app.services.vector_store import upsert_videos
+            qdrant_payload = [
+                {**v, "workspace_id": workspace_id}
+                for v in videos
+            ]
+            await upsert_videos(qdrant_payload)
+        except Exception as exc:
+            logger.warning("Qdrant upsert failed for channel %s: %s", channel_id, exc)
+
     return total

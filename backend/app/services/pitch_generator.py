@@ -129,8 +129,16 @@ async def generate_pitches(
         logger.error("Failed to parse LLM output: %s\nRaw: %s", exc, raw_output[:500])
         return []
 
+    from app.services.originality_checker import check_pitch_originality
+
     saved: list[Pitch] = []
     for pd in pitch_data_list:
+        # Run originality check before saving
+        pitch_text = f"{pd.title} {pd.concept_summary}"
+        originality = await check_pitch_originality(pitch_text, workspace_id)
+
+        status = "low_originality" if originality["low_originality"] else "pending"
+
         pitch = Pitch(
             id=uuid.uuid4(),
             workspace_id=uuid.UUID(workspace_id),
@@ -140,7 +148,9 @@ async def generate_pitches(
             appeal_score=pd.appeal_score,
             source_topics=[t["topic"] for t in trending_topics[:5]],
             raw_llm_output=raw_output,
-            status="pending",
+            originality_score=originality["originality_score"],
+            similar_videos=originality["similar_videos"],
+            status=status,
             created_at=datetime.now(tz=timezone.utc),
         )
         db.add(pitch)
