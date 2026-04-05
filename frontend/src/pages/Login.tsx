@@ -9,15 +9,10 @@ export default function Login() {
     window.location.href = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/auth/login`;
   };
 
-  // Dev only: exchange a manually obtained token pair
-  const handleDevLogin = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/auth/me`, {
-      credentials: 'include',
-    });
-    if (res.ok) {
-      // DEV_AUTO_LOGIN is active — server already knows who we are, create dummy tokens
-      login('dev-auto-login', 'dev-auto-login');
-    }
+  // Dev only: backend has DEV_AUTO_LOGIN=true so it ignores the token value.
+  // Just set a dummy token to mark the frontend as authenticated.
+  const handleDevLogin = () => {
+    login('dev-auto-login', 'dev-auto-login');
   };
 
   return (
