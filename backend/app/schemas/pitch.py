@@ -29,6 +29,7 @@ class PitchResponse(BaseModel):
     source_topics: list | None
     originality_score: float | None
     similar_videos: list | None
+    notes: str | None
     status: str
     created_at: datetime
 
