@@ -11,6 +11,7 @@ from app.models.review_action import ReviewAction, ReviewActionType
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskResponse, TaskTransitionRequest, TaskUpdate
 from app.services.state_machine import InvalidTransitionError, TransitionGuardError, validate_transition
+from app.services.pubsub import publish_task_event
 
 router = APIRouter(tags=["tasks"])
 
@@ -110,4 +111,14 @@ async def transition_task(
 
     await db.commit()
     await db.refresh(task)
+
+    # Broadcast status change over WebSocket
+    project = await db.get(Project, task.project_id)
+    if project:
+        await publish_task_event(
+            task_id=str(task.id),
+            status=task.status.value,
+            workspace_id=str(project.workspace_id),
+        )
+
     return task
