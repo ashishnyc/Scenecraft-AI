@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { WorkspaceProvider } from './context/WorkspaceContext';
 import { Sidebar } from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
@@ -17,6 +18,7 @@ function AppLayout() {
   }
 
   return (
+    <WorkspaceProvider>
     <div style={{ display: 'flex', height: '100%' }}>
       <Sidebar />
       <div style={{ flex: 1, overflow: 'auto' }}>
@@ -31,6 +33,7 @@ function AppLayout() {
         </Routes>
       </div>
     </div>
+    </WorkspaceProvider>
   );
 }
 

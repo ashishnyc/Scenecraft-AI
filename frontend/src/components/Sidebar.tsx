@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useWorkspace } from '../context/WorkspaceContext';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
@@ -13,6 +15,8 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const { logout } = useAuth();
+  const { workspaces, currentWorkspace, switchWorkspace } = useWorkspace();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
     <aside className={styles.sidebar} aria-label="Main navigation">
@@ -22,10 +26,34 @@ export function Sidebar() {
         <span className={styles.logoText}>Scenecraft</span>
       </div>
 
-      {/* Workspace switcher placeholder */}
+      {/* Workspace switcher */}
       <div className={styles.workspaceSwitcher}>
         <span className={styles.workspaceLabel}>Workspace</span>
-        <button className={styles.workspaceButton}>My Workspace ▾</button>
+        <div className={styles.dropdownWrapper}>
+          <button
+            className={styles.workspaceButton}
+            onClick={() => setDropdownOpen((o) => !o)}
+            aria-haspopup="listbox"
+            aria-expanded={dropdownOpen}
+          >
+            {currentWorkspace?.name ?? 'No workspace'} ▾
+          </button>
+          {dropdownOpen && workspaces.length > 0 && (
+            <ul className={styles.dropdown} role="listbox">
+              {workspaces.map((ws) => (
+                <li
+                  key={ws.id}
+                  role="option"
+                  aria-selected={ws.id === currentWorkspace?.id}
+                  className={`${styles.dropdownItem} ${ws.id === currentWorkspace?.id ? styles.dropdownItemActive : ''}`}
+                  onClick={() => { switchWorkspace(ws.id); setDropdownOpen(false); }}
+                >
+                  {ws.name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* Navigation */}
