@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
+    # Dev bypass — never enable in production
+    DEV_AUTO_LOGIN: bool = False
+    DEV_AUTO_LOGIN_USER_EMAIL: str = ""
+
     # App
     SECRET_KEY: str
     DEBUG: bool = False
