@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
+    # CORS
+    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:5174"]
+
     # Dev bypass — never enable in production
     DEV_AUTO_LOGIN: bool = False
     DEV_AUTO_LOGIN_USER_EMAIL: str = ""
