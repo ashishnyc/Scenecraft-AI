@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { WorkspaceProvider } from './context/WorkspaceContext';
+import { WorkspaceProvider, useWorkspace } from './context/WorkspaceContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { Sidebar } from './components/Sidebar';
+import PitchInbox from './components/PitchInbox';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Scripts from './pages/Scripts';
@@ -11,6 +13,36 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import ProjectDetail from './pages/ProjectDetail';
 import Login from './pages/Login';
+import { fetchPitches } from './api/pitches';
+import styles from './components/PitchInbox.module.css';
+
+function InboxButton() {
+  const { currentWorkspace } = useWorkspace();
+  const [count, setCount] = useState(0);
+  const [open, setOpen] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!currentWorkspace) { setCount(0); return; }
+    try {
+      const pitches = await fetchPitches(currentWorkspace.id);
+      setCount(pitches.filter((p) => p.status === 'pending' || p.status === 'low_originality').length);
+    } catch {
+      // ignore
+    }
+  }, [currentWorkspace]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return (
+    <>
+      <button className={styles.inboxBtn} onClick={() => setOpen(true)} aria-label="AI Inbox">
+        AI Inbox
+        {count > 0 && <span className={styles.badgeCount}>{count}</span>}
+      </button>
+      {open && <PitchInbox onClose={() => { setOpen(false); refresh(); }} />}
+    </>
+  );
+}
 
 function AppLayout() {
   const { isAuthenticated } = useAuth();
@@ -24,17 +56,29 @@ function AppLayout() {
     <ProjectProvider>
     <div style={{ display: 'flex', height: '100%' }}>
       <Sidebar />
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        <Routes>
-          <Route path="/"          element={<Dashboard />} />
-          <Route path="/tasks"     element={<Tasks />} />
-          <Route path="/projects"  element={<ProjectDetail />} />
-          <Route path="/scripts"   element={<Scripts />} />
-          <Route path="/talent"    element={<Talent />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings"  element={<Settings />} />
-          <Route path="*"          element={<Navigate to="/" replace />} />
-        </Routes>
+      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          padding: 'var(--space-3) var(--space-6)',
+          borderBottom: '1px solid var(--color-border)',
+          flexShrink: 0,
+        }}>
+          <InboxButton />
+        </div>
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <Routes>
+            <Route path="/"          element={<Dashboard />} />
+            <Route path="/tasks"     element={<Tasks />} />
+            <Route path="/projects"  element={<ProjectDetail />} />
+            <Route path="/scripts"   element={<Scripts />} />
+            <Route path="/talent"    element={<Talent />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings"  element={<Settings />} />
+            <Route path="*"          element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </div>
     </div>
     </ProjectProvider>
