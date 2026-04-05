@@ -27,6 +27,8 @@ class PitchResponse(BaseModel):
     target_audience_hook: str | None
     appeal_score: float | None
     source_topics: list | None
+    originality_score: float | None
+    similar_videos: list | None
     status: str
     created_at: datetime
 

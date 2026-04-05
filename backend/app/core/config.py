@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     # Anthropic (Claude)
     ANTHROPIC_API_KEY: str = ""
 
+    # Qdrant vector DB
+    QDRANT_URL: str = ""        # empty = in-memory
+    QDRANT_API_KEY: str = ""
+
+    # Originality threshold (cosine similarity 0-1; above this = too similar)
+    ORIGINALITY_THRESHOLD: float = 0.85
+
     # JWT
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
