@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
+import { ProjectProvider } from './context/ProjectContext';
 import { Sidebar } from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
@@ -8,6 +9,7 @@ import Scripts from './pages/Scripts';
 import Talent from './pages/Talent';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import ProjectDetail from './pages/ProjectDetail';
 import Login from './pages/Login';
 
 function AppLayout() {
@@ -19,12 +21,14 @@ function AppLayout() {
 
   return (
     <WorkspaceProvider>
+    <ProjectProvider>
     <div style={{ display: 'flex', height: '100%' }}>
       <Sidebar />
       <div style={{ flex: 1, overflow: 'auto' }}>
         <Routes>
           <Route path="/"          element={<Dashboard />} />
           <Route path="/tasks"     element={<Tasks />} />
+          <Route path="/projects"  element={<ProjectDetail />} />
           <Route path="/scripts"   element={<Scripts />} />
           <Route path="/talent"    element={<Talent />} />
           <Route path="/analytics" element={<Analytics />} />
@@ -33,6 +37,7 @@ function AppLayout() {
         </Routes>
       </div>
     </div>
+    </ProjectProvider>
     </WorkspaceProvider>
   );
 }

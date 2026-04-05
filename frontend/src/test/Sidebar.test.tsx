@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { vi, beforeEach } from 'vitest';
 import { AuthProvider } from '../context/AuthContext';
 import { WorkspaceProvider } from '../context/WorkspaceContext';
+import { ProjectProvider } from '../context/ProjectContext';
 import { Sidebar } from '../components/Sidebar';
 import { apiClient } from '../api/client';
 
@@ -19,7 +20,9 @@ function renderSidebar() {
     <MemoryRouter>
       <AuthProvider>
         <WorkspaceProvider>
-          <Sidebar />
+          <ProjectProvider>
+            <Sidebar />
+          </ProjectProvider>
         </WorkspaceProvider>
       </AuthProvider>
     </MemoryRouter>
@@ -51,4 +54,9 @@ test('nav items are links', () => {
   const nav = screen.getByRole('navigation');
   const links = nav.querySelectorAll('a');
   expect(links.length).toBe(6);
+});
+
+test('renders projects section', () => {
+  renderSidebar();
+  expect(screen.getByText('Projects')).toBeInTheDocument();
 });

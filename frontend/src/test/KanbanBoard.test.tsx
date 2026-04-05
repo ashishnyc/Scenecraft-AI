@@ -14,6 +14,10 @@ vi.mock('../context/WorkspaceContext', () => ({
   useWorkspace: vi.fn(),
 }));
 
+vi.mock('../context/ProjectContext', () => ({
+  useProject: vi.fn(),
+}));
+
 // Mock Tasks API calls
 vi.mock('../api/tasks', async (importOriginal) => {
   const original = await importOriginal<typeof import('../api/tasks')>();
@@ -24,6 +28,7 @@ vi.mock('../api/tasks', async (importOriginal) => {
 });
 
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useProject } from '../context/ProjectContext';
 import { fetchTasksForWorkspace } from '../api/tasks';
 
 const mockWorkspace = {
@@ -85,6 +90,13 @@ describe('Tasks page — no workspace selected', () => {
       switchWorkspace: vi.fn(),
       refreshWorkspaces: vi.fn(),
     });
+    vi.mocked(useProject).mockReturnValue({
+      projects: [],
+      currentProject: null,
+      loading: false,
+      selectProject: vi.fn(),
+      refreshProjects: vi.fn(),
+    });
   });
 
   it('prompts to select a workspace', () => {
@@ -108,6 +120,13 @@ describe('Tasks page — with workspace', () => {
       loading: false,
       switchWorkspace: vi.fn(),
       refreshWorkspaces: vi.fn(),
+    });
+    vi.mocked(useProject).mockReturnValue({
+      projects: [],
+      currentProject: null,
+      loading: false,
+      selectProject: vi.fn(),
+      refreshProjects: vi.fn(),
     });
     vi.mocked(fetchTasksForWorkspace).mockResolvedValue(tasks);
   });

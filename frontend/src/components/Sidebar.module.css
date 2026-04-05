@@ -67,11 +67,11 @@
 }
 
 .nav {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   padding: 0 var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .navItem {
@@ -99,6 +99,90 @@
   font-size: var(--text-base);
   width: 20px;
   text-align: center;
+}
+
+.projectsSection {
+  flex: 1;
+  padding: 0 var(--space-3);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.projectsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.projectsLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.addProjectBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  line-height: 1;
+  padding: 0 var(--space-1);
+  cursor: pointer;
+}
+
+.addProjectBtn:hover { color: var(--color-accent-primary); }
+
+.projectList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.projectItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.projectItem:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.projectItemActive {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent-primary);
+}
+
+.projectDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.projectEmpty {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  padding: var(--space-2) var(--space-3);
 }
 
 .logoutButton {
