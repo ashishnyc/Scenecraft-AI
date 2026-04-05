@@ -81,14 +81,17 @@ async def update_task(
 
 
 async def _run_outline_for_task(task_id: uuid.UUID) -> None:
-    """Background job: stage 1+2 of the script pipeline.
+    """Background job: stages 1-4 of the script pipeline.
 
-    Generates the 3-act outline (stage 1) then immediately expands every
-    scene into full screenplay format (stage 2), storing both results in
-    task.script.
+    Stage 1 — generate 3-act outline
+    Stage 2 — expand every scene into full screenplay format
+    Stage 3 — consistency check (re-generates blocker scenes once if needed)
+    Stage 4 — copyright scan (rewrites flagged scenes in-place)
     """
     from app.db.postgres import AsyncSessionLocal
     from app.models.workspace import Workspace
+    from app.services.consistency_checker import check_consistency
+    from app.services.copyright_scanner import scan_copyright
     from app.services.outline_generator import generate_outline
     from app.services.scene_expander import expand_scenes
 
@@ -135,9 +138,39 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
             outline=outline,
             cast_profiles=cast_profiles,
         )
-        if full_script is not None:
+        if full_script is None:
+            return
+
+        current_script = dict(task.script or {})
+        current_script["full_script"] = full_script
+        task.script = current_script
+        await db.commit()
+
+        # Stage 3 — consistency check
+        consistency_report = await check_consistency(
+            task_id=str(task.id),
+            full_script=full_script,
+            style_guide=style_guide,
+            cast_profiles=cast_profiles,
+            outline=outline,
+        )
+        if consistency_report is not None:
             current_script = dict(task.script or {})
-            current_script["full_script"] = full_script
+            current_script["consistency_flags"] = consistency_report["flags"]
+            task.script = current_script
+            await db.commit()
+
+        # Stage 4 — copyright scan
+        scan_result = await scan_copyright(
+            task_id=str(task.id),
+            full_script=full_script,
+            workspace_id=str(project.workspace_id),
+        )
+        if scan_result is not None:
+            updated_full_script, copyright_report = scan_result
+            current_script = dict(task.script or {})
+            current_script["full_script"] = updated_full_script
+            current_script["copyright_flags"] = copyright_report
             task.script = current_script
             await db.commit()
 

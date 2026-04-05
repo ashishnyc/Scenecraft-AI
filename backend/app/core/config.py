@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     # Originality threshold (cosine similarity 0-1; above this = too similar)
     ORIGINALITY_THRESHOLD: float = 0.85
 
+    # Copyright similarity threshold for script scans (stage 4 of script pipeline)
+    COPYRIGHT_THRESHOLD: float = 0.80
+
     # JWT
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
