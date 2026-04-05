@@ -5,10 +5,12 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+from app.core.performance import DB_POOL_SETTINGS
+
 engine = create_async_engine(
     settings.database_url,
     echo=settings.DEBUG,
-    pool_pre_ping=True,
+    **DB_POOL_SETTINGS,
 )
 
 AsyncSessionLocal = async_sessionmaker(

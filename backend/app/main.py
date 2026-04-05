@@ -40,7 +40,42 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Scenecraft AI",
-    version="0.1.0",
+    version="1.0.0",
+    description="""
+## Scenecraft AI API
+
+End-to-end AI video production platform. Turns content ideas into published YouTube videos.
+
+### Pipeline overview
+
+1. **Content Intelligence** — trend detection, pitch generation, originality check
+2. **Script Pipeline** — outline → scene expansion → consistency check → copyright scan
+3. **Audio Pipeline** — voice routing → synthesis (ElevenLabs/Fish Audio) → assembly
+4. **Video Pipeline** — shot planning → clip generation (Kling) → music (Suno) → assembly → QC
+5. **Publish Pipeline** — HLS preview → video review → thumbnail → metadata → YouTube upload
+
+### Authentication
+
+All endpoints (except `/auth/*` and `/health`) require a Bearer JWT obtained from `/auth/token`.
+
+### Rate limits
+
+- Standard endpoints: 120 requests / minute per IP
+- Auth endpoints: 20 requests / minute per IP
+""",
+    openapi_tags=[
+        {"name": "auth", "description": "Google OAuth2 login and JWT token management"},
+        {"name": "workspaces", "description": "Workspace CRUD — top-level organisational unit"},
+        {"name": "projects", "description": "Project CRUD — content series within a workspace"},
+        {"name": "tasks", "description": "Task lifecycle — from idea to published video"},
+        {"name": "subtasks", "description": "Subtask dependency management"},
+        {"name": "characters", "description": "Character/talent roster management"},
+        {"name": "audio", "description": "Audio streaming endpoints"},
+        {"name": "video", "description": "Video preview, review, thumbnail, metadata, analytics"},
+        {"name": "competitor", "description": "Competitor channel intelligence"},
+        {"name": "trends", "description": "Trending topic detection"},
+        {"name": "pitches", "description": "AI pitch generation and inbox"},
+    ],
     lifespan=lifespan,
 )
 
