@@ -1,14 +1,15 @@
 """Task CRUD and lifecycle state machine endpoints."""
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id
 from app.db.postgres import get_db
+from app.models.character import Character, CharacterCasting
 from app.models.project import Project
 from app.models.review_action import ReviewAction, ReviewActionType
-from app.models.task import Task
+from app.models.task import Task, TaskStatus
 from app.schemas.task import TaskCreate, TaskResponse, TaskTransitionRequest, TaskUpdate
 from app.services.state_machine import InvalidTransitionError, TransitionGuardError, validate_transition
 from app.services.pubsub import publish_task_event
@@ -79,10 +80,51 @@ async def update_task(
     return task
 
 
+async def _run_outline_for_task(task_id: uuid.UUID) -> None:
+    """Background job: generate outline and store it in task.script['outline']."""
+    from app.db.postgres import AsyncSessionLocal
+    from app.models.workspace import Workspace
+    from app.services.outline_generator import generate_outline
+
+    async with AsyncSessionLocal() as db:
+        task = await db.get(Task, task_id)
+        if task is None:
+            return
+
+        project = await db.get(Project, task.project_id)
+        if project is None:
+            return
+
+        # Gather cast names from the project's character castings
+        result = await db.execute(
+            select(Character.name)
+            .join(CharacterCasting, CharacterCasting.character_id == Character.id)
+            .where(CharacterCasting.project_id == project.id)
+        )
+        cast_names = list(result.scalars().all())
+
+        workspace = await db.get(Workspace, project.workspace_id)
+        style_guide = (workspace.style_guide or {}) if workspace else {}
+
+        outline = await generate_outline(
+            task_id=str(task.id),
+            concept_brief=task.concept_brief or "",
+            creator_notes=task.creator_notes,
+            style_guide=style_guide,
+            cast_names=cast_names,
+        )
+        if outline is not None:
+            current_script = dict(task.script or {})
+            current_script["outline"] = outline
+            task.script = current_script
+            await db.commit()
+
+
 @router.post("/tasks/{task_id}/transition", response_model=TaskResponse)
 async def transition_task(
     task_id: uuid.UUID,
     body: TaskTransitionRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     _user_id: str = Depends(get_current_user_id),
 ):
@@ -120,5 +162,9 @@ async def transition_task(
             status=task.status.value,
             workspace_id=str(project.workspace_id),
         )
+
+    # Trigger outline generation when entering scripting state
+    if body.status == TaskStatus.scripting:
+        background_tasks.add_task(_run_outline_for_task, task.id)
 
     return task
