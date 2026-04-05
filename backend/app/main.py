@@ -7,6 +7,7 @@ from app.db.postgres import engine
 import app.models  # noqa: F401 — registers all ORM models with SQLAlchemy
 from app.api.auth import router as auth_router
 from app.api.workspaces import router as workspaces_router
+from app.api.projects import router as projects_router
 
 
 @asynccontextmanager
@@ -27,6 +28,7 @@ app = FastAPI(
 
 app.include_router(auth_router)
 app.include_router(workspaces_router)
+app.include_router(projects_router)
 
 
 @app.get("/health")
