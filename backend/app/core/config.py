@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     ELEVENLABS_API_KEY: str = ""
     FISH_AUDIO_API_KEY: str = ""
 
+    # Video generation (SA-32, SA-33, SA-34)
+    IMAGE_GEN_API_KEY: str = ""   # DALL-E / Stable Diffusion
+    KLING_API_KEY: str = ""       # Primary video gen
+    SUNO_API_KEY: str = ""        # Music generation
+    VIDEO_CLIP_BATCH_SIZE: int = 5
+
     # Qdrant vector DB
     QDRANT_URL: str = ""        # empty = in-memory
     QDRANT_API_KEY: str = ""

@@ -8,6 +8,8 @@ import PitchInbox from './components/PitchInbox';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Scripts from './pages/Scripts';
+import VideoReview from './pages/VideoReview';
+import PublishWorkflow from './pages/PublishWorkflow';
 import Talent from './pages/Talent';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
@@ -73,6 +75,8 @@ function AppLayout() {
             <Route path="/tasks"     element={<Tasks />} />
             <Route path="/projects"  element={<ProjectDetail />} />
             <Route path="/scripts"   element={<Scripts />} />
+            <Route path="/video-review" element={<VideoReview />} />
+            <Route path="/publish"   element={<PublishWorkflow />} />
             <Route path="/talent"    element={<Talent />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings"  element={<Settings />} />
