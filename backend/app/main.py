@@ -9,6 +9,7 @@ from app.api.auth import router as auth_router
 from app.api.workspaces import router as workspaces_router
 from app.api.projects import router as projects_router
 from app.api.tasks import router as tasks_router
+from app.api.subtasks import router as subtasks_router
 
 
 @asynccontextmanager
@@ -31,6 +32,7 @@ app.include_router(auth_router)
 app.include_router(workspaces_router)
 app.include_router(projects_router)
 app.include_router(tasks_router)
+app.include_router(subtasks_router)
 
 
 @app.get("/health")
