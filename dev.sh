@@ -24,6 +24,17 @@ FRONTEND_PID=""
 
 log() { echo -e "${BOLD}[dev]${RESET} $*"; }
 
+free_port() {
+  local port="$1"
+  local pid
+  pid=$(lsof -ti tcp:"$port" 2>/dev/null || true)
+  if [ -n "$pid" ]; then
+    log "${YELLOW}Port $port in use (PID $pid) — killing...${RESET}"
+    kill "$pid" 2>/dev/null || true
+    sleep 0.5
+  fi
+}
+
 prefix_output() {
   local label="$1" color="$2"
   while IFS= read -r line; do
@@ -32,6 +43,7 @@ prefix_output() {
 }
 
 start_backend() {
+  free_port 8000
   log "${BLUE}Starting backend...${RESET}"
   cd "$BACKEND_DIR"
   if [ ! -f ".env" ]; then
@@ -48,6 +60,7 @@ start_backend() {
 }
 
 start_frontend() {
+  free_port 5173
   log "${GREEN}Starting frontend...${RESET}"
   cd "$FRONTEND_DIR"
   npm run dev 2>&1 \
