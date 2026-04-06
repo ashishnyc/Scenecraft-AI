@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import type { CharacterCreate, RoleType } from '../api/characters';
+import { Select } from './Select';
+import type { SelectOption } from './Select';
 import styles from './NewProjectModal.module.css'; // reuse same modal styles
 
-const ROLE_OPTIONS: { value: RoleType; label: string }[] = [
+const ROLE_OPTIONS: SelectOption<RoleType>[] = [
   { value: 'lead', label: 'Lead' },
   { value: 'supporting', label: 'Supporting' },
   { value: 'recurring', label: 'Recurring' },
@@ -59,11 +61,11 @@ export function CreateCharacterModal({ onConfirm, onCancel }: Props) {
 
           <label className={styles.label}>
             Role type
-            <select className={styles.select} value={roleType} onChange={(e) => setRoleType(e.target.value as RoleType)}>
-              {ROLE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            <Select
+              value={roleType}
+              options={ROLE_OPTIONS}
+              onChange={setRoleType}
+            />
           </label>
 
           <label className={styles.label}>

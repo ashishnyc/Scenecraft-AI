@@ -6,7 +6,15 @@ import type { Task } from '../api/tasks';
 import { fetchTasksForWorkspace, STATUS_LABELS } from '../api/tasks';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { Toast } from '../components/Toast';
+import { Select } from '../components/Select';
+import type { SelectOption } from '../components/Select';
 import styles from './ProjectDetail.module.css';
+
+const PROJECT_STATUS_OPTIONS: SelectOption<NonNullable<ProjectUpdate['status']>>[] = [
+  { value: 'active', label: 'Active' },
+  { value: 'paused', label: 'Paused' },
+  { value: 'completed', label: 'Completed' },
+];
 
 export default function ProjectDetail() {
   const { currentProject, refreshProjects } = useProject();
@@ -86,11 +94,11 @@ export default function ProjectDetail() {
 
           <label className={styles.label}>
             Status
-            <select className={styles.select} value={status} onChange={(e) => setStatus(e.target.value as ProjectUpdate['status'])}>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
-            </select>
+            <Select
+              value={status as NonNullable<ProjectUpdate['status']>}
+              options={PROJECT_STATUS_OPTIONS}
+              onChange={setStatus}
+            />
           </label>
 
           <label className={styles.label}>

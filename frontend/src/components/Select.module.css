@@ -1,0 +1,79 @@
+.wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.trigger {
+  width: 100%;
+  text-align: left;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  transition: border-color 0.15s;
+  line-height: 1.4;
+}
+
+.trigger:hover,
+.triggerOpen {
+  border-color: var(--color-accent-primary);
+}
+
+.chevron {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  list-style: none;
+  z-index: 200;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.option {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.1s, color 0.1s;
+}
+
+.option:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.optionActive {
+  color: var(--color-accent-primary);
+}
+
+.checkmark {
+  font-size: 0.7rem;
+  color: var(--color-accent-primary);
+}

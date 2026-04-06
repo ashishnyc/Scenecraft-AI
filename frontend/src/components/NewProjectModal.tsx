@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import type { ProjectCreate, ProjectType } from '../api/projects';
+import { Select } from './Select';
+import type { SelectOption } from './Select';
 import styles from './NewProjectModal.module.css';
+
+const PROJECT_TYPE_OPTIONS: SelectOption<ProjectType>[] = [
+  { value: 'serialised', label: 'Serialised' },
+  { value: 'anthology', label: 'Anthology' },
+];
 
 interface Props {
   onConfirm: (data: ProjectCreate) => Promise<void>;
@@ -51,10 +58,11 @@ export function NewProjectModal({ onConfirm, onCancel }: Props) {
 
           <label className={styles.label}>
             Type
-            <select className={styles.select} value={type} onChange={(e) => setType(e.target.value as ProjectType)}>
-              <option value="serialised">Serialised</option>
-              <option value="anthology">Anthology</option>
-            </select>
+            <Select
+              value={type}
+              options={PROJECT_TYPE_OPTIONS}
+              onChange={setType}
+            />
           </label>
 
           <label className={styles.label}>
