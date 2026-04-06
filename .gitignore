@@ -24,3 +24,6 @@ htmlcov/
 
 # OS
 .DS_Store
+
+# Design references (local only)
+design-refs/

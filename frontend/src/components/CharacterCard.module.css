@@ -13,17 +13,18 @@
 .card:hover { border-color: var(--color-accent-primary); }
 
 .avatar {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: var(--color-accent-subtle);
-  color: var(--color-accent-primary);
+  background: var(--gradient-accent);
+  color: #fff;
   font-size: var(--text-base);
-  font-weight: var(--font-semibold);
+  font-weight: var(--font-bold);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: var(--shadow-accent);
 }
 
 .info {

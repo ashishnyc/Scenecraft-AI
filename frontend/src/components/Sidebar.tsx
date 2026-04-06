@@ -9,16 +9,24 @@ import { createProject } from '../api/projects';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
-  { to: '/',             label: 'Dashboard',     icon: '⬛' },
-  { to: '/tasks',        label: 'Tasks',         icon: '📋' },
-  { to: '/scripts',      label: 'Script Review', icon: '📝' },
-  { to: '/video-review', label: 'Video Review',  icon: '🎬' },
-  { to: '/publish',      label: 'Publish',       icon: '🚀' },
-  { to: '/talent',       label: 'Talent Roster', icon: '🎭' },
-  { to: '/analytics',    label: 'Analytics',     icon: '📊' },
-  { to: '/instagram',    label: 'Instagram',     icon: '📸' },
-  { to: '/settings',     label: 'Settings',      icon: '⚙️' },
+  { to: '/',             label: 'Dashboard',     icon: '▦'  },
+  { to: '/tasks',        label: 'Tasks',         icon: '▤'  },
+  { to: '/scripts',      label: 'Script Review', icon: '✎'  },
+  { to: '/video-review', label: 'Video Review',  icon: '▶'  },
+  { to: '/publish',      label: 'Publish',       icon: '↑'  },
+  { to: '/talent',       label: 'Talent Roster', icon: '◉'  },
+  { to: '/analytics',    label: 'Analytics',     icon: '∿'  },
+  { to: '/instagram',    label: 'Instagram',     icon: '⬡'  },
+  { to: '/settings',     label: 'Settings',      icon: '⚙'  },
 ];
+
+function toHandle(name: string) {
+  return '@' + name.toLowerCase().replace(/\s+/g, '');
+}
+
+function initials(name: string) {
+  return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+}
 
 export function Sidebar() {
   const { logout } = useAuth();
@@ -42,7 +50,10 @@ export function Sidebar() {
       {/* Logo */}
       <div className={styles.logo}>
         <span className={styles.logoMark}>SC</span>
-        <span className={styles.logoText}>Scenecraft</span>
+        <span className={styles.logoText}>
+          Scenecraft
+          <span className={styles.logoSub}>AI Studio</span>
+        </span>
       </div>
 
       {/* Workspace switcher */}
@@ -64,9 +75,14 @@ export function Sidebar() {
             aria-haspopup="listbox"
             aria-expanded={dropdownOpen}
           >
-            {currentWorkspace?.name ?? 'No workspace'} ▾
+            {currentWorkspace?.name ?? 'No workspace'}
+            {currentWorkspace && (
+              <span className={styles.workspaceHandle}>
+                {toHandle(currentWorkspace.name)}
+              </span>
+            )}
           </button>
-          {dropdownOpen && workspaces.length > 0 && (
+          {dropdownOpen && (
             <ul className={styles.dropdown} role="listbox">
               {workspaces.map((ws) => (
                 <li
@@ -79,6 +95,13 @@ export function Sidebar() {
                   {ws.name}
                 </li>
               ))}
+              {workspaces.length > 0 && <hr className={styles.dropdownDivider} />}
+              <li
+                className={styles.dropdownNewWorkspace}
+                onClick={() => { setDropdownOpen(false); setShowNewWorkspace(true); }}
+              >
+                + New workspace
+              </li>
             </ul>
           )}
         </div>
@@ -119,10 +142,7 @@ export function Sidebar() {
             <li key={p.id}>
               <button
                 className={`${styles.projectItem} ${currentProject?.id === p.id ? styles.projectItemActive : ''}`}
-                onClick={() => {
-                  selectProject(p);
-                  navigate('/projects');
-                }}
+                onClick={() => { selectProject(p); navigate('/projects'); }}
               >
                 <span className={styles.projectDot} />
                 {p.name}
@@ -135,10 +155,19 @@ export function Sidebar() {
         </ul>
       </div>
 
-      {/* Logout */}
-      <button className={styles.logoutButton} onClick={logout}>
-        Sign out
-      </button>
+      {/* User section */}
+      <div className={styles.userSection}>
+        <div className={styles.userAvatar}>
+          {currentWorkspace ? initials(currentWorkspace.name) : 'U'}
+        </div>
+        <div className={styles.userInfo}>
+          <div className={styles.userName}>{currentWorkspace?.name ?? 'User'}</div>
+          <div className={styles.userRole}>Studio Owner</div>
+        </div>
+        <button className={styles.logoutButton} onClick={logout} title="Sign out">
+          ⏻
+        </button>
+      </div>
 
       {showNewProject && (
         <NewProjectModal

@@ -64,11 +64,27 @@ function AppLayout() {
           display: 'flex',
           justifyContent: 'flex-end',
           alignItems: 'center',
+          gap: 'var(--space-3)',
           padding: 'var(--space-3) var(--space-6)',
           borderBottom: '1px solid var(--color-border)',
+          background: 'var(--color-bg-primary)',
           flexShrink: 0,
         }}>
           <InboxButton />
+          <button style={{
+            background: 'var(--gradient-accent)',
+            border: 'none',
+            borderRadius: 'var(--radius-md)',
+            color: '#fff',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 600,
+            padding: 'var(--space-2) var(--space-4)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            boxShadow: 'var(--shadow-accent)',
+          }}>
+            + New Task
+          </button>
         </div>
         <div style={{ flex: 1, overflow: 'auto' }}>
           <Routes>
