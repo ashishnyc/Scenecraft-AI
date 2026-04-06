@@ -7,8 +7,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from app.core.config import get_settings
-
 logger = logging.getLogger(__name__)
 
 # ── Output schema ─────────────────────────────────────────────────────────────
@@ -159,27 +157,13 @@ async def generate_outline(
     For serialised projects, pass *story_bible* to inject series continuity.
     Returns the validated outline dict, or None on failure.
     """
-    settings = get_settings()
-
-    if not settings.ANTHROPIC_API_KEY:
-        logger.warning("ANTHROPIC_API_KEY not set — skipping outline generation for task %s", task_id)
-        return None
-
-    import anthropic
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    from app.services.llm_client import llm_chat
 
     user_prompt = _build_prompt(concept_brief, creator_notes, style_guide, cast_names, story_bible)
 
-    try:
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=4096,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_prompt}],
-        )
-        raw = message.content[0].text
-    except Exception as exc:
-        logger.error("LLM call failed for outline (task %s): %s", task_id, exc)
+    raw = llm_chat(system=SYSTEM_PROMPT, user=user_prompt, max_tokens=4096)
+    if raw is None:
+        logger.warning("LLM unavailable — skipping outline generation for task %s", task_id)
         return None
 
     try:

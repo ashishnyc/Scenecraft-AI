@@ -1,7 +1,7 @@
 """YouTube metadata generator (SA-40).
 
-Uses Claude to pre-fill a YouTube title, description, and tags based on the
-task's outline and full script. Returns None when ANTHROPIC_API_KEY is absent.
+Uses the local LLM (Ollama) to pre-fill a YouTube title, description, and tags
+based on the task's outline and full script.
 """
 from __future__ import annotations
 
@@ -9,8 +9,6 @@ import json
 import logging
 import re
 from typing import Any
-
-import anthropic
 
 from app.core.config import get_settings
 from app.db.postgres import get_db
@@ -40,10 +38,7 @@ async def generate_youtube_metadata(task_id: str) -> dict[str, Any] | None:
 
     Returns ``{"title": ..., "description": ..., "tags": [...]}`` or None.
     """
-    settings = get_settings()
-    if not settings.ANTHROPIC_API_KEY:
-        logger.warning("ANTHROPIC_API_KEY not set — metadata generation skipped")
-        return None
+    from app.services.llm_client import llm_chat
 
     async for db in get_db():
         row = (await db.execute(select(Task).where(Task.id == task_id))).scalar_one_or_none()
@@ -75,13 +70,10 @@ Return a JSON object with exactly these keys:
 Return only the JSON object, no prose."""
 
     try:
-        client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-        response = client.messages.create(
-            model=_MODEL,
-            max_tokens=_MAX_TOKENS,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw = response.content[0].text
+        raw = llm_chat(system="You are a YouTube content strategist. Return only JSON.", user=prompt, max_tokens=_MAX_TOKENS)
+        if raw is None:
+            logger.warning("LLM unavailable — metadata generation skipped for task %s", task_id)
+            return None
         metadata = _parse_metadata(raw)
     except Exception as exc:
         logger.error("Metadata generation failed for task %s: %s", task_id, exc)

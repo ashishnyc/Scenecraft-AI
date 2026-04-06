@@ -159,9 +159,7 @@ async def generate_reply(comment_id: str) -> str | None:
             await db.commit()
             return None
 
-        settings = get_settings()
-        if not settings.ANTHROPIC_API_KEY:
-            return None
+        from app.services.llm_client import llm_chat
 
         # Load character context
         post = (await db.execute(
@@ -189,14 +187,10 @@ Be genuine, personal, and avoid sounding like a bot. No hashtags. No links.
 Return only the reply text."""
 
         try:
-            import anthropic
-            client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-            response = client.messages.create(
-                model=_MODEL,
-                max_tokens=128,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            reply_text = response.content[0].text.strip().strip('"')
+            reply_raw = llm_chat(system="You are a social media personality. Reply naturally.", user=prompt, max_tokens=128)
+            if reply_raw is None:
+                return None
+            reply_text = reply_raw.strip().strip('"')
         except Exception as exc:
             logger.error("Reply generation failed for comment %s: %s", comment_id, exc)
             return None

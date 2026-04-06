@@ -86,16 +86,14 @@ No markdown, no explanation outside the JSON.
 """
 
 
-async def _rewrite_scene(client: Any, scene: dict) -> dict | None:
+async def _rewrite_scene(scene: dict) -> dict | None:
     """Ask the LLM to rewrite a flagged scene to improve originality."""
+    from app.services.llm_client import llm_chat
     try:
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=2048,
-            system=REWRITE_SYSTEM,
-            messages=[{"role": "user", "content": json.dumps(scene, indent=2)}],
-        )
-        raw = message.content[0].text.strip()
+        raw = llm_chat(system=REWRITE_SYSTEM, user=json.dumps(scene, indent=2), max_tokens=2048)
+        if raw is None:
+            return None
+        raw = raw.strip()
         if raw.startswith("```"):
             lines = raw.splitlines()
             raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
@@ -118,15 +116,6 @@ async def scan_copyright(
     Flagged scenes are rewritten in-place.  Returns a tuple of
     ``(updated_full_script, copyright_report_dict)`` or ``None`` on failure.
     """
-    settings = get_settings()
-
-    if not settings.ANTHROPIC_API_KEY:
-        logger.warning("ANTHROPIC_API_KEY not set — skipping copyright scan for task %s", task_id)
-        return None
-
-    import anthropic
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-
     scene_texts = _extract_scene_texts(full_script)
     if not scene_texts:
         logger.warning("No scene text found in full_script for task %s", task_id)
@@ -163,7 +152,7 @@ async def scan_copyright(
             original_scene = scenes_by_num.get(flag.scene_number)
             if original_scene is None:
                 continue
-            rewritten = await _rewrite_scene(client, original_scene)
+            rewritten = await _rewrite_scene(original_scene)
             if rewritten:
                 scenes_by_num[flag.scene_number] = rewritten
 
