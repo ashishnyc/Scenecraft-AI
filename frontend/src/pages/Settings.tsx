@@ -82,7 +82,7 @@ export default function Settings() {
       <form className={styles.form} onSubmit={handleSubmit}>
         <div className={styles.field}>
           <label className={styles.label}>Workspace name</label>
-          <input className={styles.input} value={name} onChange={(e) => setName(e.target.value)} required />
+          <input className={`${styles.input} ${styles.inputReadonly}`} value={name} readOnly />
         </div>
 
         <div className={styles.field}>
