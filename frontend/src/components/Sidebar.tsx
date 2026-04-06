@@ -60,13 +60,6 @@ export function Sidebar() {
       <div className={styles.workspaceSwitcher}>
         <div className={styles.workspaceLabelRow}>
           <span className={styles.workspaceLabel}>Workspace</span>
-          <button
-            className={styles.addProjectBtn}
-            onClick={() => { setDropdownOpen(false); setShowNewWorkspace(true); }}
-            title="New workspace"
-          >
-            +
-          </button>
         </div>
         <div className={styles.dropdownWrapper}>
           <button
@@ -129,13 +122,6 @@ export function Sidebar() {
       <div className={styles.projectsSection}>
         <div className={styles.projectsHeader}>
           <span className={styles.projectsLabel}>Projects</span>
-          <button
-            className={styles.addProjectBtn}
-            onClick={() => setShowNewProject(true)}
-            title="New project"
-          >
-            +
-          </button>
         </div>
         <ul className={styles.projectList}>
           {projects.map((p) => (
@@ -149,9 +135,11 @@ export function Sidebar() {
               </button>
             </li>
           ))}
-          {projects.length === 0 && (
-            <li className={styles.projectEmpty}>No projects yet</li>
-          )}
+          <li>
+            <button className={styles.newProjectBtn} onClick={() => setShowNewProject(true)}>
+              + New Project
+            </button>
+          </li>
         </ul>
       </div>
 
