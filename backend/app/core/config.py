@@ -37,8 +37,9 @@ class Settings(BaseSettings):
     # NewsAPI
     NEWS_API_KEY: str = ""
 
-    # Anthropic (Claude)
-    ANTHROPIC_API_KEY: str = ""
+    # Ollama (local LLM)
+    OLLAMA_BASE_URL: str = "http://localhost:11434"   # set to remote host if needed
+    OLLAMA_MODEL: str = "llama3.2"                    # any model you have pulled
 
     # Voice synthesis (SA-25)
     ELEVENLABS_API_KEY: str = ""

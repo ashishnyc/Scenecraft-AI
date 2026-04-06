@@ -143,14 +143,7 @@ async def expand_scenes(
 
     Returns ``{"scenes": [...]}`` on success, or ``None`` on any failure.
     """
-    settings = get_settings()
-
-    if not settings.ANTHROPIC_API_KEY:
-        logger.warning("ANTHROPIC_API_KEY not set — skipping scene expansion for task %s", task_id)
-        return None
-
-    import anthropic
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    from app.services.llm_client import llm_chat
 
     cast_names = list(cast_profiles.keys())
     scenes_flat: list[dict] = [
@@ -168,19 +161,9 @@ async def expand_scenes(
     for scene in scenes_flat:
         prompt = _build_scene_prompt(scene, cast_profiles, expanded)
 
-        try:
-            message = client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=2048,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            raw = message.content[0].text
-        except Exception as exc:
-            logger.error(
-                "LLM call failed for scene %s (task %s): %s",
-                scene.get("scene_number"), task_id, exc,
-            )
+        raw = llm_chat(system=SYSTEM_PROMPT, user=prompt, max_tokens=2048)
+        if raw is None:
+            logger.error("LLM unavailable for scene %s (task %s)", scene.get("scene_number"), task_id)
             return None
 
         try:

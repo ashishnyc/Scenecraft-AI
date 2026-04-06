@@ -121,13 +121,7 @@ async def extract_episode_events(
     episode_number: int,
 ) -> dict[str, Any] | None:
     """Call the LLM to extract story events from a completed episode script."""
-    settings = get_settings()
-    if not settings.ANTHROPIC_API_KEY:
-        logger.warning("ANTHROPIC_API_KEY not set — skipping story bible extraction for task %s", task_id)
-        return None
-
-    import anthropic
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    from app.services.llm_client import llm_chat
 
     open_threads = [t for t in (existing_bible or {}).get("plot_threads", []) if t.get("status") == "open"]
     prompt = f"""\
@@ -142,14 +136,12 @@ Full script:
 Extract the story events now.
 """
 
+    raw = llm_chat(system=EXTRACT_SYSTEM, user=prompt, max_tokens=2048)
+    if raw is None:
+        logger.warning("LLM unavailable — skipping story bible extraction for task %s", task_id)
+        return None
     try:
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=2048,
-            system=EXTRACT_SYSTEM,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw = message.content[0].text.strip()
+        raw = raw.strip()
         if raw.startswith("```"):
             lines = raw.splitlines()
             raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])

@@ -120,25 +120,12 @@ async def plan_shots(
     audio_stems: dict | None,
 ) -> dict[str, Any] | None:
     """Generate a shot list for *full_script*. Returns ShotList dict or None."""
-    settings = get_settings()
-    if not settings.ANTHROPIC_API_KEY:
-        logger.warning("ANTHROPIC_API_KEY not set — skipping scene planner for task %s", task_id)
-        return None
-
-    import anthropic
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    from app.services.llm_client import llm_chat
 
     prompt = _build_prompt(full_script, audio_stems)
-    try:
-        msg = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=8192,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw = msg.content[0].text
-    except Exception as exc:
-        logger.error("LLM call failed for scene planner (task %s): %s", task_id, exc)
+    raw = llm_chat(system=SYSTEM_PROMPT, user=prompt, max_tokens=8192)
+    if raw is None:
+        logger.warning("LLM unavailable — skipping scene planner for task %s", task_id)
         return None
 
     try:

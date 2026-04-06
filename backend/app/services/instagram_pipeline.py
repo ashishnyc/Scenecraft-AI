@@ -41,14 +41,7 @@ async def generate_post_content(
     Returns:
         {"caption": str, "hashtags": list[str], "alt_text": str}
     """
-    settings = get_settings()
-    if not settings.ANTHROPIC_API_KEY:
-        logger.warning("ANTHROPIC_API_KEY not set — returning placeholder post content")
-        return {
-            "caption": prompt_context,
-            "hashtags": ["#content", "#scenecraft"],
-            "alt_text": "Image post",
-        }
+    from app.services.llm_client import llm_chat
 
     character_context = ""
     if character_id:
@@ -81,14 +74,10 @@ Generate an engaging Instagram post. Return a JSON object with:
 Return only the JSON object."""
 
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-        response = client.messages.create(
-            model=_MODEL,
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw = response.content[0].text.strip()
+        raw_result = llm_chat(system="You are a social media content creator. Return only JSON.", user=prompt, max_tokens=1024)
+        if raw_result is None:
+            raise ValueError("LLM unavailable")
+        raw = raw_result.strip()
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
         raw = re.sub(r"\s*```$", "", raw)
         result = json.loads(raw)

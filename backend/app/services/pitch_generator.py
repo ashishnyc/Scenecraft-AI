@@ -94,33 +94,17 @@ async def generate_pitches(
     count: int = 3,
 ) -> list[Pitch]:
     """
-    Call Claude to generate `count` pitches and persist them.
-    Falls back gracefully if ANTHROPIC_API_KEY is not set.
+    Call the LLM to generate `count` pitches and persist them.
+    Falls back gracefully if OLLAMA_BASE_URL is not set.
     """
-    from app.core.config import get_settings
-    settings = get_settings()
-
-    if not settings.ANTHROPIC_API_KEY:
-        logger.warning("ANTHROPIC_API_KEY not set — skipping pitch generation")
-        return []
-
-    import anthropic
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    from app.services.llm_client import llm_chat
 
     user_prompt = _build_user_prompt(
         workspace_name, style_guide, trending_topics, competitor_top_videos, count
     )
 
-    try:
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=2048,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_prompt}],
-        )
-        raw_output = message.content[0].text
-    except Exception as exc:
-        logger.error("LLM call failed: %s", exc)
+    raw_output = llm_chat(system=SYSTEM_PROMPT, user=user_prompt, max_tokens=2048)
+    if raw_output is None:
         return []
 
     try:
