@@ -17,6 +17,7 @@ interface WorkspaceContextValue {
   loading: boolean;
   switchWorkspace: (id: string) => void;
   refreshWorkspaces: () => Promise<void>;
+  createWorkspace: (name: string) => Promise<void>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -55,8 +56,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }, [workspaces]);
 
+  const createWorkspace = useCallback(async (name: string) => {
+    const res = await apiClient.post<Workspace>('/workspaces', { name });
+    const created = res.data;
+    setWorkspaces((prev) => [created, ...prev]);
+    setCurrentWorkspace(created);
+    localStorage.setItem(WORKSPACE_KEY, created.id);
+  }, []);
+
   return (
-    <WorkspaceContext.Provider value={{ workspaces, currentWorkspace, loading, switchWorkspace, refreshWorkspaces }}>
+    <WorkspaceContext.Provider value={{ workspaces, currentWorkspace, loading, switchWorkspace, refreshWorkspaces, createWorkspace }}>
       {children}
     </WorkspaceContext.Provider>
   );

@@ -41,14 +41,19 @@
   margin-bottom: var(--space-6);
 }
 
+.workspaceLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
 .workspaceLabel {
-  display: block;
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: var(--space-2);
-  padding: 0 var(--space-2);
 }
 
 .workspaceButton {

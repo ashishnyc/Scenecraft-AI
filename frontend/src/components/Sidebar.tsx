@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useProject } from '../context/ProjectContext';
 import { NewProjectModal } from './NewProjectModal';
+import { NewWorkspaceModal } from './NewWorkspaceModal';
 import { createProject } from '../api/projects';
 import styles from './Sidebar.module.css';
 
@@ -21,12 +22,13 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const { logout } = useAuth();
-  const { workspaces, currentWorkspace, switchWorkspace } = useWorkspace();
+  const { workspaces, currentWorkspace, switchWorkspace, createWorkspace } = useWorkspace();
   const { projects, currentProject, selectProject, refreshProjects } = useProject();
   const navigate = useNavigate();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
+  const [showNewWorkspace, setShowNewWorkspace] = useState(false);
 
   const handleCreateProject = async (data: Parameters<typeof createProject>[1]) => {
     if (!currentWorkspace) return;
@@ -45,7 +47,16 @@ export function Sidebar() {
 
       {/* Workspace switcher */}
       <div className={styles.workspaceSwitcher}>
-        <span className={styles.workspaceLabel}>Workspace</span>
+        <div className={styles.workspaceLabelRow}>
+          <span className={styles.workspaceLabel}>Workspace</span>
+          <button
+            className={styles.addProjectBtn}
+            onClick={() => { setDropdownOpen(false); setShowNewWorkspace(true); }}
+            title="New workspace"
+          >
+            +
+          </button>
+        </div>
         <div className={styles.dropdownWrapper}>
           <button
             className={styles.workspaceButton}
@@ -133,6 +144,13 @@ export function Sidebar() {
         <NewProjectModal
           onConfirm={handleCreateProject}
           onCancel={() => setShowNewProject(false)}
+        />
+      )}
+
+      {showNewWorkspace && (
+        <NewWorkspaceModal
+          onConfirm={async (name) => { await createWorkspace(name); setShowNewWorkspace(false); }}
+          onCancel={() => setShowNewWorkspace(false)}
         />
       )}
     </aside>
