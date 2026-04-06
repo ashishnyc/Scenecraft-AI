@@ -163,8 +163,8 @@
 }
 
 .dropActive {
-  border-color: #6c63ff;
-  background: rgba(108, 99, 255, 0.08);
+  border-color: var(--color-accent-primary);
+  background: var(--color-accent-subtle);
 }
 
 .dropHint {
@@ -196,7 +196,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6c63ff, #a855f7);
+  background: var(--gradient-accent);
   color: #fff;
   display: flex;
   align-items: center;
