@@ -17,6 +17,7 @@ interface WorkspaceContextValue {
   switchWorkspace: (id: string) => void;
   refreshWorkspaces: () => Promise<void>;
   createWorkspace: (name: string, youtubeChannelId: string) => Promise<void>;
+  deleteWorkspace: (id: string) => Promise<void>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -63,8 +64,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(WORKSPACE_KEY, created.id);
   }, []);
 
+  const deleteWorkspace = useCallback(async (id: string) => {
+    await apiClient.delete(`/workspaces/${id}`);
+    const remaining = workspaces.filter((w) => w.id !== id);
+    setWorkspaces(remaining);
+    if (currentWorkspace?.id === id) {
+      const next = remaining[0] ?? null;
+      setCurrentWorkspace(next);
+      if (next) localStorage.setItem(WORKSPACE_KEY, next.id);
+      else localStorage.removeItem(WORKSPACE_KEY);
+    }
+  }, [workspaces, currentWorkspace]);
+
   return (
-    <WorkspaceContext.Provider value={{ workspaces, currentWorkspace, loading, switchWorkspace, refreshWorkspaces, createWorkspace }}>
+    <WorkspaceContext.Provider value={{ workspaces, currentWorkspace, loading, switchWorkspace, refreshWorkspaces, createWorkspace, deleteWorkspace }}>
       {children}
     </WorkspaceContext.Provider>
   );

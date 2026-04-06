@@ -1,16 +1,20 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import styles from './Settings.module.css';
 
 export default function Settings() {
-  const { currentWorkspace, refreshWorkspaces } = useWorkspace();
+  const { currentWorkspace, refreshWorkspaces, deleteWorkspace } = useWorkspace();
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [styleGuide, setStyleGuide] = useState('');
   const [competitorChannels, setCompetitorChannels] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!currentWorkspace) return;
@@ -41,6 +45,19 @@ export default function Settings() {
       setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!currentWorkspace) return;
+    setDeleting(true);
+    try {
+      await deleteWorkspace(currentWorkspace.id);
+      navigate('/');
+    } catch {
+      setError('Failed to delete workspace');
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -96,6 +113,31 @@ export default function Settings() {
           {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save changes'}
         </button>
       </form>
+
+      <div className={styles.dangerZone}>
+        <h2 className={styles.dangerTitle}>Danger zone</h2>
+        <div className={styles.dangerRow}>
+          <div>
+            <div className={styles.dangerLabel}>Delete workspace</div>
+            <div className={styles.dangerDesc}>Permanently delete this workspace and all its data. This cannot be undone.</div>
+          </div>
+          {!showDeleteConfirm ? (
+            <button className={styles.deleteButton} onClick={() => setShowDeleteConfirm(true)}>
+              Delete workspace
+            </button>
+          ) : (
+            <div className={styles.confirmRow}>
+              <span className={styles.confirmText}>Are you sure?</span>
+              <button className={styles.confirmDeleteButton} onClick={handleDelete} disabled={deleting}>
+                {deleting ? 'Deleting…' : 'Yes, delete'}
+              </button>
+              <button className={styles.cancelDeleteButton} onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
