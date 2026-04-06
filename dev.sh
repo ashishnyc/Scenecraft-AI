@@ -37,7 +37,12 @@ start_backend() {
   if [ ! -f ".env" ]; then
     log "${YELLOW}Warning: backend/.env not found. Copy .env.example and fill in values.${RESET}"
   fi
-  uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 2>&1 \
+  # Resolve uvicorn: prefer .venv, fall back to PATH
+  UVICORN="uvicorn"
+  if [ -f "$BACKEND_DIR/.venv/bin/uvicorn" ]; then
+    UVICORN="$BACKEND_DIR/.venv/bin/uvicorn"
+  fi
+  "$UVICORN" app.main:app --reload --host 0.0.0.0 --port 8000 2>&1 \
     | prefix_output "backend" "$BLUE" &
   BACKEND_PID=$!
 }
