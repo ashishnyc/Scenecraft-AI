@@ -178,7 +178,7 @@ export function Sidebar() {
 
       {showNewWorkspace && (
         <NewWorkspaceModal
-          onConfirm={async (name) => { await createWorkspace(name); setShowNewWorkspace(false); }}
+          onConfirm={async (name, channelId) => { await createWorkspace(name, channelId); setShowNewWorkspace(false); }}
           onCancel={() => setShowNewWorkspace(false)}
         />
       )}
