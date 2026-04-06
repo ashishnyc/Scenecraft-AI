@@ -51,6 +51,15 @@
   border-color: var(--color-accent-primary);
 }
 
+.inputReadonly {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.inputReadonly:focus {
+  border-color: var(--color-border);
+}
+
 .textarea {
   resize: vertical;
   font-family: var(--font-mono);
