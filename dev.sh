@@ -28,6 +28,7 @@ CYAN='\033[1;36m'
 
 BACKEND_PID=""
 FRONTEND_PID=""
+STOPPING=false
 
 log() { echo -e "${BOLD}[dev]${RESET} $*"; }
 
@@ -87,6 +88,7 @@ start_frontend() {
 }
 
 stop_all() {
+  STOPPING=true
   log "${RED}Stopping servers...${RESET}"
   [ -n "$BACKEND_PID" ]  && kill "$BACKEND_PID"  2>/dev/null || true
   [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null || true
@@ -157,6 +159,7 @@ start_frontend
 # Monitor both — restart whichever dies unexpectedly
 while true; do
   sleep 2
+  $STOPPING && break
   if [ -n "$BACKEND_PID" ] && ! kill -0 "$BACKEND_PID" 2>/dev/null; then
     log "${YELLOW}Backend exited unexpectedly — restarting...${RESET}"
     printf '── Backend crashed and restarted: %s ──\n' "$(date '+%Y-%m-%d %H:%M:%S')" >> "$(log_file backend)"
