@@ -6,7 +6,6 @@ import styles from './Settings.module.css';
 export default function Settings() {
   const { currentWorkspace, refreshWorkspaces } = useWorkspace();
   const [name, setName] = useState('');
-  const [uploadSchedule, setUploadSchedule] = useState('');
   const [styleGuide, setStyleGuide] = useState('');
   const [competitorChannels, setCompetitorChannels] = useState('');
   const [saving, setSaving] = useState(false);
@@ -16,7 +15,6 @@ export default function Settings() {
   useEffect(() => {
     if (!currentWorkspace) return;
     setName(currentWorkspace.name);
-    setUploadSchedule(currentWorkspace.upload_schedule ? JSON.stringify(currentWorkspace.upload_schedule, null, 2) : '');
     setStyleGuide(currentWorkspace.style_guide ? JSON.stringify(currentWorkspace.style_guide, null, 2) : '');
     setCompetitorChannels((currentWorkspace.competitor_channels ?? []).join(', '));
   }, [currentWorkspace]);
@@ -27,13 +25,10 @@ export default function Settings() {
     setError('');
     setSaving(true);
     try {
-      let parsedUpload = null;
       let parsedStyle = null;
-      if (uploadSchedule.trim()) parsedUpload = JSON.parse(uploadSchedule);
       if (styleGuide.trim()) parsedStyle = JSON.parse(styleGuide);
       await apiClient.put(`/workspaces/${currentWorkspace.id}`, {
         name,
-        upload_schedule: parsedUpload,
         style_guide: parsedStyle,
         competitor_channels: competitorChannels
           ? competitorChannels.split(',').map((s) => s.trim()).filter(Boolean)
@@ -83,11 +78,6 @@ export default function Settings() {
               {currentWorkspace.youtube_channel_id ? 'Reconnect YouTube' : 'Connect YouTube'}
             </button>
           </div>
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.label}>Upload schedule (JSON)</label>
-          <textarea className={styles.textarea} value={uploadSchedule} onChange={(e) => setUploadSchedule(e.target.value)} placeholder='{"day": "monday", "time": "18:00"}' rows={3} />
         </div>
 
         <div className={styles.field}>
