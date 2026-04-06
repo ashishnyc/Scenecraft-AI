@@ -187,5 +187,5 @@
 
 .breakdownList { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
 .breakdownItem { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: #0d0d1a; border: 1px solid #2d2d44; border-radius: 6px; }
-.breakdownId { font-size: 0.8rem; color: #718096; font-family: monospace; }
+.breakdownId { font-size: 0.8rem; color: #718096; font-family: var(--font-mono); }
 .breakdownViews { font-size: 0.85rem; color: #e2e8f0; font-weight: 600; }

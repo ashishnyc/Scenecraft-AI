@@ -21,7 +21,12 @@ a {
   text-decoration: none;
 }
 
-button {
+button, input, textarea, select {
   font-family: inherit;
+  font-size: inherit;
   cursor: pointer;
+}
+
+input, textarea, select {
+  cursor: auto;
 }
