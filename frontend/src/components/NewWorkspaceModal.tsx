@@ -15,7 +15,6 @@ interface ChannelValidation {
 }
 
 export function NewWorkspaceModal({ onConfirm, onCancel }: Props) {
-  const [name, setName] = useState('');
   const [channelInput, setChannelInput] = useState('');
   const [validation, setValidation] = useState<ChannelValidation | null>(null);
   const [validating, setValidating] = useState(false);
@@ -48,11 +47,11 @@ export function NewWorkspaceModal({ onConfirm, onCancel }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !validation?.valid || !validation.channel_id) return;
+    if (!validation?.valid || !validation.channel_id || !validation.channel_name) return;
     setSubmitting(true);
     setError(null);
     try {
-      await onConfirm(name.trim(), validation.channel_id);
+      await onConfirm(validation.channel_name, validation.channel_id);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Failed to create workspace';
       setError(msg);
@@ -60,25 +59,13 @@ export function NewWorkspaceModal({ onConfirm, onCancel }: Props) {
     }
   };
 
-  const canSubmit = name.trim().length > 0 && validation?.valid === true && !submitting;
+  const canSubmit = validation?.valid === true && !submitting;
 
   return (
     <div className={styles.overlay} onClick={onCancel}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <h2 className={styles.title}>New Workspace</h2>
         <form onSubmit={handleSubmit} className={styles.form}>
-
-          <label className={styles.label}>
-            Workspace name
-            <input
-              className={styles.input}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Horror Channel"
-              autoFocus
-              required
-            />
-          </label>
 
           <label className={styles.label}>
             YouTube channel
@@ -88,6 +75,7 @@ export function NewWorkspaceModal({ onConfirm, onCancel }: Props) {
                 value={channelInput}
                 onChange={(e) => handleChannelChange(e.target.value)}
                 placeholder="UCxxxxxx or @handle"
+                autoFocus
                 required
               />
               <button
@@ -101,7 +89,7 @@ export function NewWorkspaceModal({ onConfirm, onCancel }: Props) {
             </div>
             {validation?.valid && (
               <span className={modalStyles.channelValid}>
-                ✓ {validation.channel_name}
+                ✓ {validation.channel_name} — will be used as workspace name
               </span>
             )}
           </label>
