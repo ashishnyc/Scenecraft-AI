@@ -13,8 +13,10 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
-  width: 360px;
-  max-width: 90vw;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .title {
@@ -91,3 +93,108 @@
 
 .submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 .submitBtn:not(:disabled):hover { opacity: 0.9; }
+
+/* ── AI Brief section ── */
+.briefSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.briefInput {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.briefInput:focus { border-color: var(--color-accent-primary); }
+
+.briefInput::placeholder { color: var(--color-text-muted); }
+
+.suggestBtn {
+  align-self: flex-start;
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-accent-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-primary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.suggestBtn:hover:not(:disabled) { background: var(--color-accent-primary); color: #fff; }
+.suggestBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Suggestions preview ── */
+.suggestionsBox {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.seriesConcept {
+  font-size: var(--text-xs);
+  color: var(--color-accent-primary);
+  font-style: italic;
+  margin: 0;
+}
+
+.suggestionsLabel {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  font-weight: var(--font-semibold);
+  margin: 0;
+}
+
+.conceptList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.conceptItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--color-accent-primary);
+}
+
+.conceptTitle {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.conceptDesc {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+/* ── Divider ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-1) 0;
+}

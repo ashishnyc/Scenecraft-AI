@@ -45,3 +45,22 @@ export async function updateProject(projectId: string, body: ProjectUpdate): Pro
 export async function deleteProject(projectId: string): Promise<void> {
   await apiClient.delete(`/projects/${projectId}`);
 }
+
+export interface VideoConceptSuggestion {
+  title: string;
+  concept: string;
+}
+
+export interface ProjectSuggestion {
+  name: string;
+  series_concept: string;
+  video_concepts: VideoConceptSuggestion[];
+}
+
+export async function suggestProject(workspaceId: string, brief: string): Promise<ProjectSuggestion> {
+  const res = await apiClient.post<ProjectSuggestion>(
+    `/workspaces/${workspaceId}/projects/suggest`,
+    { brief },
+  );
+  return res.data;
+}
