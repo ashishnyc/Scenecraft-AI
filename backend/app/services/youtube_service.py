@@ -61,3 +61,37 @@ async def exchange_youtube_code(code: str, workspace_id: str = "") -> tuple[str,
         channel_id = items[0]["id"]
 
     return channel_id, oauth_token
+
+
+async def validate_youtube_channel(channel_identifier: str) -> dict:
+    """Validate a YouTube channel ID or handle against the YouTube Data API.
+
+    Accepts:
+    - UCxxxxxx  (standard channel ID)
+    - @handle   (YouTube handle)
+
+    Returns {"valid": True, "channel_id": str, "channel_name": str}
+         or {"valid": False, "channel_id": None, "channel_name": None}
+    """
+    if not settings.YOUTUBE_API_KEY:
+        raise ValueError("YOUTUBE_API_KEY is not configured")
+
+    params: dict = {"part": "snippet", "key": settings.YOUTUBE_API_KEY}
+    if channel_identifier.startswith("@"):
+        params["forHandle"] = channel_identifier
+    else:
+        params["id"] = channel_identifier
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(_YOUTUBE_CHANNELS_URL, params=params, timeout=10)
+        resp.raise_for_status()
+
+    items = resp.json().get("items", [])
+    if not items:
+        return {"valid": False, "channel_id": None, "channel_name": None}
+
+    return {
+        "valid": True,
+        "channel_id": items[0]["id"],
+        "channel_name": items[0]["snippet"]["title"],
+    }

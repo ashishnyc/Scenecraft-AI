@@ -16,7 +16,7 @@ interface WorkspaceContextValue {
   loading: boolean;
   switchWorkspace: (id: string) => void;
   refreshWorkspaces: () => Promise<void>;
-  createWorkspace: (name: string) => Promise<void>;
+  createWorkspace: (name: string, youtubeChannelId: string) => Promise<void>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -55,8 +55,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }, [workspaces]);
 
-  const createWorkspace = useCallback(async (name: string) => {
-    const res = await apiClient.post<Workspace>('/workspaces', { name });
+  const createWorkspace = useCallback(async (name: string, youtubeChannelId: string) => {
+    const res = await apiClient.post<Workspace>('/workspaces', { name, youtube_channel_id: youtubeChannelId });
     const created = res.data;
     setWorkspaces((prev) => [created, ...prev]);
     setCurrentWorkspace(created);

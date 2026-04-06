@@ -8,9 +8,24 @@ from app.api.deps import get_current_user_id
 from app.db.postgres import get_db
 from app.models.workspace import Workspace
 from app.schemas.workspace import WorkspaceCreate, WorkspaceResponse, WorkspaceUpdate
-from app.services.youtube_service import get_youtube_connect_url, exchange_youtube_code
+from app.services.youtube_service import get_youtube_connect_url, exchange_youtube_code, validate_youtube_channel
 
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
+
+
+@router.get("/validate-channel")
+async def validate_channel(
+    channel_id: str,
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Validate a YouTube channel ID or handle against the YouTube Data API."""
+    try:
+        result = await validate_youtube_channel(channel_id.strip())
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="YouTube API error") from exc
+    return result
 
 
 @router.post("", response_model=WorkspaceResponse, status_code=status.HTTP_201_CREATED)
@@ -19,7 +34,25 @@ async def create_workspace(
     db: AsyncSession = Depends(get_db),
     _user_id: str = Depends(get_current_user_id),
 ):
-    workspace = Workspace(id=uuid.uuid4(), **body.model_dump())
+    # Validate the YouTube channel exists before saving
+    try:
+        result = await validate_youtube_channel(body.youtube_channel_id.strip())
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="YouTube API error") from exc
+
+    if not result["valid"]:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="YouTube channel not found. Check the channel ID or handle and try again.",
+        )
+
+    # Store the canonical channel ID (resolved from handle if needed)
+    data = body.model_dump()
+    data["youtube_channel_id"] = result["channel_id"]
+
+    workspace = Workspace(id=uuid.uuid4(), **data)
     db.add(workspace)
     await db.commit()
     await db.refresh(workspace)

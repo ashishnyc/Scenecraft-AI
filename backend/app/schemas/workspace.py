@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 class WorkspaceCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    youtube_channel_id: str | None = None
+    youtube_channel_id: str = Field(..., min_length=1, description="YouTube channel ID (UCxxxxxx) or handle (@name)")
     style_guide: dict | None = None
     competitor_channels: list | None = None
 
