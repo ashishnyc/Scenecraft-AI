@@ -1,6 +1,7 @@
 """Project CRUD endpoints."""
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +12,38 @@ from app.models.workspace import Workspace
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
 
 router = APIRouter(tags=["projects"])
+
+
+class ProjectSuggestRequest(BaseModel):
+    brief: str
+
+
+class VideoConceptSuggestion(BaseModel):
+    title: str
+    concept: str
+
+
+class ProjectSuggestResponse(BaseModel):
+    name: str
+    series_concept: str
+    video_concepts: list[VideoConceptSuggestion]
+
+
+@router.post("/workspaces/{workspace_id}/projects/suggest", response_model=ProjectSuggestResponse)
+async def suggest_project(
+    workspace_id: uuid.UUID,
+    body: ProjectSuggestRequest,
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Use the LLM to suggest a project name and base video concepts from a free-text brief."""
+    from app.services.project_suggester import suggest_project as _suggest
+    result = _suggest(body.brief)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LLM unavailable — check OLLAMA_BASE_URL and model configuration.",
+        )
+    return result
 
 
 @router.post("/workspaces/{workspace_id}/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
