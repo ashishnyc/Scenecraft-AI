@@ -112,3 +112,103 @@
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }
+
+.dangerZone {
+  margin-top: var(--space-12);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.dangerTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: #ff4d4d;
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dangerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.dangerLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.dangerDesc {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.deleteButton {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: 1px solid #ff4d4d;
+  border-radius: var(--radius-md);
+  color: #ff4d4d;
+  font-size: var(--text-sm);
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.deleteButton:hover {
+  background: rgba(255, 77, 77, 0.1);
+}
+
+.confirmRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.confirmText {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.confirmDeleteButton {
+  padding: var(--space-2) var(--space-4);
+  background: #ff4d4d;
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.confirmDeleteButton:hover:not(:disabled) {
+  background: #e03030;
+}
+
+.confirmDeleteButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelDeleteButton {
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+
+.cancelDeleteButton:hover:not(:disabled) {
+  border-color: var(--color-text-secondary);
+}
