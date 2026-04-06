@@ -26,9 +26,10 @@ export function NewWorkspaceModal({ onConfirm, onCancel }: Props) {
     setValidating(true);
     setValidation(null);
     setError(null);
+    const handle = '@' + channelInput.trim().replace(/^@+/, '');
     try {
       const res = await apiClient.get<ChannelValidation>('/workspaces/validate-channel', {
-        params: { channel_id: channelInput.trim() },
+        params: { channel_id: handle },
       });
       setValidation(res.data);
       if (!res.data.valid) setError('Channel not found. Check the ID or handle and try again.');
@@ -70,14 +71,16 @@ export function NewWorkspaceModal({ onConfirm, onCancel }: Props) {
           <label className={styles.label}>
             YouTube channel
             <div className={modalStyles.channelRow}>
-              <input
-                className={styles.input}
-                value={channelInput}
-                onChange={(e) => handleChannelChange(e.target.value)}
-                placeholder="UCxxxxxx or @handle"
-                autoFocus
-                required
-              />
+              <div className={modalStyles.channelInputWrapper}>
+                <span className={modalStyles.atPrefix}>@</span>
+                <input
+                  value={channelInput}
+                  onChange={(e) => handleChannelChange(e.target.value)}
+                  placeholder="handle"
+                  autoFocus
+                  required
+                />
+              </div>
               <button
                 type="button"
                 className={modalStyles.checkBtn}
