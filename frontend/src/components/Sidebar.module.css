@@ -121,7 +121,7 @@
 
 .navItemActive {
   background: var(--color-accent-subtle);
-  color: var(--color-text-primary);
+  color: var(--color-accent-primary);
 }
 
 .navIcon {
