@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # Ollama (local LLM)
     OLLAMA_BASE_URL: str = "http://localhost:11434"   # set to remote host if needed
-    OLLAMA_MODEL: str = "llama3.2"                    # any model you have pulled
+    OLLAMA_MODEL: str = "kimi-k2.5:cloud"            # change to any model you have pulled
 
     # Voice synthesis (SA-25)
     ELEVENLABS_API_KEY: str = ""
