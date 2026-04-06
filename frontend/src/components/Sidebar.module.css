@@ -43,7 +43,7 @@
 .logoSub {
   display: block;
   font-size: 0.6rem;
-  color: var(--color-text-muted);
+  color: var(--color-accent-primary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -120,8 +120,9 @@
 }
 
 .navItemActive {
-  background: var(--color-accent-subtle);
-  color: var(--color-accent-primary);
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+  box-shadow: inset 3px 0 0 var(--color-accent-primary);
 }
 
 .navIcon {
