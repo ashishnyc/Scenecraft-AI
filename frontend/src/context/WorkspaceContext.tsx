@@ -5,8 +5,6 @@ export interface Workspace {
   id: string;
   name: string;
   youtube_channel_id: string | null;
-  style_guide: Record<string, unknown> | null;
-  competitor_channels: string[] | null;
   created_at: string;
 }
 

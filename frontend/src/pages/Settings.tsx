@@ -1,15 +1,12 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useNavigate } from 'react-router-dom';
-import { apiClient } from '../api/client';
 import styles from './Settings.module.css';
 
 export default function Settings() {
   const { currentWorkspace, refreshWorkspaces, deleteWorkspace } = useWorkspace();
   const navigate = useNavigate();
   const [name, setName] = useState('');
-  const [styleGuide, setStyleGuide] = useState('');
-  const [competitorChannels, setCompetitorChannels] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -19,8 +16,6 @@ export default function Settings() {
   useEffect(() => {
     if (!currentWorkspace) return;
     setName(currentWorkspace.name);
-    setStyleGuide(currentWorkspace.style_guide ? JSON.stringify(currentWorkspace.style_guide, null, 2) : '');
-    setCompetitorChannels((currentWorkspace.competitor_channels ?? []).join(', '));
   }, [currentWorkspace]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -29,15 +24,6 @@ export default function Settings() {
     setError('');
     setSaving(true);
     try {
-      let parsedStyle = null;
-      if (styleGuide.trim()) parsedStyle = JSON.parse(styleGuide);
-      await apiClient.put(`/workspaces/${currentWorkspace.id}`, {
-        name,
-        style_guide: parsedStyle,
-        competitor_channels: competitorChannels
-          ? competitorChannels.split(',').map((s) => s.trim()).filter(Boolean)
-          : null,
-      });
       await refreshWorkspaces();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -95,16 +81,6 @@ export default function Settings() {
               {currentWorkspace.youtube_channel_id ? 'Reconnect YouTube' : 'Connect YouTube'}
             </button>
           </div>
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.label}>Style guide (JSON)</label>
-          <textarea className={styles.textarea} value={styleGuide} onChange={(e) => setStyleGuide(e.target.value)} placeholder='{"tone": "casual", "language": "en"}' rows={3} />
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.label}>Competitor channels (comma-separated)</label>
-          <input className={styles.input} value={competitorChannels} onChange={(e) => setCompetitorChannels(e.target.value)} placeholder="UCxxxxxx, UCyyyyyy" />
         </div>
 
         {error && <p className={styles.error}>{error}</p>}
