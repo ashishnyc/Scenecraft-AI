@@ -122,7 +122,6 @@
 .navItemActive {
   background: var(--color-accent-subtle);
   color: var(--color-text-primary);
-  box-shadow: inset 3px 0 0 var(--color-accent-primary);
 }
 
 .navIcon {
