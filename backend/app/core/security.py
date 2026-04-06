@@ -164,9 +164,9 @@ def validate_secrets_at_startup() -> list[str]:
     if settings.DEV_AUTO_LOGIN and not settings.DEBUG:
         warnings.append("DEV_AUTO_LOGIN is enabled without DEBUG=true — this should never happen in production")
 
-    # Warn about missing critical keys
-    if not settings.ANTHROPIC_API_KEY:
-        warnings.append("ANTHROPIC_API_KEY is not set — LLM features will be disabled")
+    # Warn about missing Ollama config
+    if not settings.OLLAMA_BASE_URL:
+        warnings.append("OLLAMA_BASE_URL is not set — LLM features will be disabled")
 
     for w in warnings:
         logger.warning("SECURITY: %s", w)
