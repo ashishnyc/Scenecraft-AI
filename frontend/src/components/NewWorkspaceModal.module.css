@@ -4,8 +4,36 @@
   align-items: stretch;
 }
 
-.channelRow input {
+.channelInputWrapper {
   flex: 1;
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s;
+}
+
+.channelInputWrapper:focus-within {
+  border-color: var(--color-accent-primary);
+}
+
+.atPrefix {
+  padding: 0 var(--space-2) 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  user-select: none;
+}
+
+.channelInputWrapper input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: var(--space-3) var(--space-3) var(--space-3) 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-family: inherit;
 }
 
 .checkBtn {
