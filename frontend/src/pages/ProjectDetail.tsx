@@ -105,7 +105,7 @@ export default function ProjectDetail() {
   const handleCreateEpisode = async (concept: VideoConceptSuggestion, idx: number) => {
     setCreatingFrom(idx);
     try {
-      await createTask(currentProject.id, concept.title);
+      await createTask(currentProject.id, concept.title, concept.concept);
       // Reload episodes
       if (currentWorkspace) {
         const all = await fetchTasksForWorkspace(currentWorkspace.id);

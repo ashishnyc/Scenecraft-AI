@@ -11,36 +11,52 @@ import type { Task, TaskStatus } from '../api/tasks';
 import { TASK_STATUSES, STATUS_LABELS, fetchTasksForWorkspace, transitionTask } from '../api/tasks';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { Toast } from '../components/Toast';
+import { TaskDrawer } from '../components/TaskDrawer';
 import styles from './Tasks.module.css';
 
 // Statuses that indicate active background processing
 const ACTIVE_STATUSES = new Set<TaskStatus>(['scripting', 'audio_preview', 'producing']);
 
-function TaskCard({ task, isDragging }: { task: Task; isDragging?: boolean }) {
+interface TaskCardProps {
+  task: Task;
+  isDragging?: boolean;
+  onClick?: () => void;
+}
+
+function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
   const isActive = ACTIVE_STATUSES.has(task.status);
+  const hasBrief = !!task.concept_brief;
   return (
-    <div className={`${styles.card} ${isDragging ? styles.cardDragging : ''}`}>
+    <div
+      className={`${styles.card} ${isDragging ? styles.cardDragging : ''}`}
+      onClick={onClick}
+    >
       <div className={styles.cardHeader}>
         <p className={styles.cardTitle}>{task.title}</p>
         {isActive && <span className={styles.activeDot} title="Processing…" />}
       </div>
-      <span className={`${styles.badge} ${styles[`badge_${task.status}`]}`}>
-        {STATUS_LABELS[task.status]}
-      </span>
+      <div className={styles.cardFooter}>
+        <span className={`${styles.badge} ${styles[`badge_${task.status}`]}`}>
+          {STATUS_LABELS[task.status]}
+        </span>
+        {!hasBrief && task.status === 'idea' && (
+          <span className={styles.noBriefHint}>needs brief</span>
+        )}
+      </div>
     </div>
   );
 }
 
-function DraggableCard({ task }: { task: Task }) {
+function DraggableCard({ task, onOpen }: { task: Task; onOpen: (t: Task) => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   return (
     <div ref={setNodeRef} {...listeners} {...attributes} style={{ opacity: isDragging ? 0.4 : 1 }}>
-      <TaskCard task={task} />
+      <TaskCard task={task} onClick={() => onOpen(task)} />
     </div>
   );
 }
 
-function DroppableColumn({ status, tasks }: { status: TaskStatus; tasks: Task[] }) {
+function DroppableColumn({ status, tasks, onOpen }: { status: TaskStatus; tasks: Task[]; onOpen: (t: Task) => void }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
     <div className={`${styles.column} ${isOver ? styles.columnOver : ''}`} ref={setNodeRef}>
@@ -49,7 +65,7 @@ function DroppableColumn({ status, tasks }: { status: TaskStatus; tasks: Task[] 
         <span className={styles.columnCount}>{tasks.length}</span>
       </div>
       <div className={styles.columnBody}>
-        {tasks.map((task) => <DraggableCard key={task.id} task={task} />)}
+        {tasks.map((task) => <DraggableCard key={task.id} task={task} onOpen={onOpen} />)}
       </div>
     </div>
   );
@@ -61,6 +77,7 @@ export default function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [drawerTask, setDrawerTask] = useState<Task | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -121,6 +138,11 @@ export default function Tasks() {
     }
   };
 
+  const handleTaskUpdated = (updated: Task) => {
+    setTasks((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    setDrawerTask(updated);
+  };
+
   if (!currentWorkspace) {
     return <main className={styles.container}><p className={styles.empty}>Select a workspace first.</p></main>;
   }
@@ -137,13 +159,21 @@ export default function Tasks() {
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className={styles.board}>
             {TASK_STATUSES.map((status) => (
-              <DroppableColumn key={status} status={status} tasks={tasksByStatus[status]} />
+              <DroppableColumn key={status} status={status} tasks={tasksByStatus[status]} onOpen={setDrawerTask} />
             ))}
           </div>
           <DragOverlay>
             {activeTask ? <TaskCard task={activeTask} isDragging /> : null}
           </DragOverlay>
         </DndContext>
+      )}
+
+      {drawerTask && (
+        <TaskDrawer
+          task={drawerTask}
+          onClose={() => setDrawerTask(null)}
+          onUpdated={handleTaskUpdated}
+        />
       )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
