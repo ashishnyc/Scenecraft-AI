@@ -5,15 +5,11 @@ import { WorkspaceProvider, useWorkspace } from './context/WorkspaceContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { Sidebar } from './components/Sidebar';
 import { NewWorkspaceModal } from './components/NewWorkspaceModal';
-import Dashboard from './pages/Dashboard';
+import { WorkspaceModal } from './components/WorkspaceModal';
 import Tasks from './pages/Tasks';
 import Scripts from './pages/Scripts';
 import VideoReview from './pages/VideoReview';
 import PublishWorkflow from './pages/PublishWorkflow';
-import Talent from './pages/Talent';
-import Analytics from './pages/Analytics';
-import Instagram from './pages/Instagram';
-import Settings from './pages/Settings';
 import ProjectDetail from './pages/ProjectDetail';
 import Login from './pages/Login';
 import styles from './App.module.css';
@@ -62,6 +58,24 @@ function WorkspaceSwitcher() {
   );
 }
 
+function TopBar() {
+  const [wsModalOpen, setWsModalOpen] = useState(false);
+  return (
+    <div className={styles.topBar}>
+      <button
+        className={styles.cogBtn}
+        onClick={() => setWsModalOpen(true)}
+        aria-label="Workspace overview"
+        title="Dashboard, Analytics, Settings…"
+      >
+        ⚙
+      </button>
+      <WorkspaceSwitcher />
+      {wsModalOpen && <WorkspaceModal onClose={() => setWsModalOpen(false)} />}
+    </div>
+  );
+}
+
 function AppLayout() {
   const { isAuthenticated } = useAuth();
 
@@ -73,22 +87,15 @@ function AppLayout() {
       <div className={styles.shell}>
         <Sidebar />
         <div className={styles.main}>
-          <div className={styles.topBar}>
-            <WorkspaceSwitcher />
-          </div>
+          <TopBar />
           <div className={styles.content}>
             <Routes>
-              <Route path="/"             element={<Dashboard />} />
               <Route path="/tasks"        element={<Tasks />} />
               <Route path="/projects"     element={<ProjectDetail />} />
               <Route path="/scripts"      element={<Scripts />} />
               <Route path="/video-review" element={<VideoReview />} />
               <Route path="/publish"      element={<PublishWorkflow />} />
-              <Route path="/talent"       element={<Talent />} />
-              <Route path="/analytics"    element={<Analytics />} />
-              <Route path="/instagram"    element={<Instagram />} />
-              <Route path="/settings"     element={<Settings />} />
-              <Route path="*"             element={<Navigate to="/" replace />} />
+              <Route path="*"             element={<Navigate to="/tasks" replace />} />
             </Routes>
           </div>
         </div>
