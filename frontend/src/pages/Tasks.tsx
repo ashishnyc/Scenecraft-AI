@@ -30,7 +30,7 @@ const NEXT_ACTION: Record<TaskStatus, string> = {
   published:     'Live on YouTube',
 };
 
-// ── Phase groups (SA-99) ──────────────────────────────────────────────────────
+// ── Phase groups ──────────────────────────────────────────────────────────────
 const PHASES = [
   { label: 'Writing',    statuses: ['idea', 'approved', 'scripting'] as TaskStatus[] },
   { label: 'Review',     statuses: ['audio_preview', 'script_review', 'final_review'] as TaskStatus[] },
@@ -60,14 +60,9 @@ function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
         {isActive && <span className={styles.activeDot} title="Processing…" />}
       </div>
       <p className={styles.nextAction}>{NEXT_ACTION[task.status]}</p>
-      <div className={styles.cardFooter}>
-        <span className={`${styles.badge} ${styles[`badge_${task.status}`]}`}>
-          {STATUS_LABELS[task.status]}
-        </span>
-        {!hasBrief && task.status === 'idea' && (
-          <span className={styles.noBriefHint}>needs brief</span>
-        )}
-      </div>
+      {!hasBrief && task.status === 'idea' && (
+        <span className={styles.noBriefHint}>needs brief</span>
+      )}
     </div>
   );
 }
@@ -81,24 +76,78 @@ function DraggableCard({ task, onOpen }: { task: Task; onOpen: (t: Task) => void
   );
 }
 
-function DroppableColumn({
-  status, tasks, onOpen,
-}: { status: TaskStatus; tasks: Task[]; onOpen: (t: Task) => void }) {
+// ── Vertical timeline status row (droppable) ──────────────────────────────────
+function StatusRow({
+  status,
+  tasks,
+  onOpen,
+  isLast,
+}: {
+  status: TaskStatus;
+  tasks: Task[];
+  onOpen: (t: Task) => void;
+  isLast: boolean;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
-    <div className={`${styles.column} ${isOver ? styles.columnOver : ''}`} ref={setNodeRef}>
-      <div className={styles.columnHeader}>
-        <span className={styles.columnTitle}>{STATUS_LABELS[status]}</span>
-        <span className={styles.columnCount}>{tasks.length}</span>
+    <div className={styles.statusRow}>
+      <div className={styles.timelineLeft}>
+        <div className={`${styles.timelineDot} ${tasks.length > 0 ? styles.timelineDotActive : ''}`} />
+        {!isLast && <div className={styles.timelineLine} />}
       </div>
-      <div className={styles.columnBody}>
-        {tasks.map((task) => <DraggableCard key={task.id} task={task} onOpen={onOpen} />)}
+      <div
+        className={`${styles.statusContent} ${isOver ? styles.statusContentOver : ''}`}
+        ref={setNodeRef}
+      >
+        <div className={styles.statusLabel}>
+          {STATUS_LABELS[status]}
+          {tasks.length > 0 && <span className={styles.statusCount}>{tasks.length}</span>}
+        </div>
+        {tasks.length > 0 && (
+          <div className={styles.statusCards}>
+            {tasks.map((task) => (
+              <DraggableCard key={task.id} task={task} onOpen={onOpen} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ── AI Ideas column (SA-97) ───────────────────────────────────────────────────
+// ── Vertical phase column ─────────────────────────────────────────────────────
+function VerticalPhaseColumn({
+  phase,
+  tasksByStatus,
+  onOpen,
+}: {
+  phase: { label: string; statuses: TaskStatus[] };
+  tasksByStatus: Record<TaskStatus, Task[]>;
+  onOpen: (t: Task) => void;
+}) {
+  const total = phase.statuses.reduce((n, s) => n + tasksByStatus[s].length, 0);
+  return (
+    <div className={styles.phaseCol}>
+      <div className={styles.phaseColHeader}>
+        <span className={styles.phaseColLabel}>{phase.label}</span>
+        {total > 0 && <span className={styles.phaseColCount}>{total}</span>}
+      </div>
+      <div className={styles.phaseColBody}>
+        {phase.statuses.map((status, idx) => (
+          <StatusRow
+            key={status}
+            status={status}
+            tasks={tasksByStatus[status]}
+            onOpen={onOpen}
+            isLast={idx === phase.statuses.length - 1}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── AI Ideas pitch card ───────────────────────────────────────────────────────
 function PitchCard({
   pitch,
   onApprove,
@@ -237,51 +286,36 @@ export default function Tasks() {
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className={styles.board}>
 
-            {/* AI Ideas column (SA-97) */}
-            <div className={styles.phaseGroup}>
-              <div className={styles.phaseHeader}>
-                <span className={styles.phaseLabel}>AI Ideas</span>
-                <span className={styles.phaseCount}>{pitches.length}</span>
+            {/* AI Ideas column */}
+            <div className={styles.phaseCol}>
+              <div className={styles.phaseColHeader}>
+                <span className={styles.phaseColLabel}>AI Ideas</span>
+                {pitches.length > 0 && <span className={styles.phaseColCount}>{pitches.length}</span>}
               </div>
-              <div className={styles.phaseColumns}>
-                <div className={styles.column}>
-                  <div className={styles.columnHeader}>
-                    <span className={styles.columnTitle}>Suggestions</span>
-                    <span className={styles.columnCount}>{pitches.length}</span>
-                  </div>
-                  <div className={styles.columnBody}>
-                    {pitches.length === 0 ? (
-                      <p className={styles.pitchEmpty}>No AI ideas pending</p>
-                    ) : (
-                      pitches.map((p) => (
-                        <PitchCard
-                          key={p.id}
-                          pitch={p}
-                          onApprove={handleApprovePitch}
-                          onReject={handleRejectPitch}
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
+              <div className={styles.phaseColBody}>
+                {pitches.length === 0 ? (
+                  <p className={styles.pitchEmpty}>No AI ideas pending</p>
+                ) : (
+                  pitches.map((p) => (
+                    <PitchCard
+                      key={p.id}
+                      pitch={p}
+                      onApprove={handleApprovePitch}
+                      onReject={handleRejectPitch}
+                    />
+                  ))
+                )}
               </div>
             </div>
 
-            {/* Phase groups (SA-99) */}
+            {/* Phase columns: Writing, Review, Production */}
             {PHASES.map((phase) => (
-              <div key={phase.label} className={styles.phaseGroup}>
-                <div className={styles.phaseHeader}>
-                  <span className={styles.phaseLabel}>{phase.label}</span>
-                  <span className={styles.phaseCount}>
-                    {phase.statuses.reduce((n, s) => n + tasksByStatus[s].length, 0)}
-                  </span>
-                </div>
-                <div className={styles.phaseColumns}>
-                  {phase.statuses.map((status) => (
-                    <DroppableColumn key={status} status={status} tasks={tasksByStatus[status]} onOpen={setModalTask} />
-                  ))}
-                </div>
-              </div>
+              <VerticalPhaseColumn
+                key={phase.label}
+                phase={phase}
+                tasksByStatus={tasksByStatus}
+                onOpen={setModalTask}
+              />
             ))}
           </div>
 
