@@ -54,6 +54,19 @@ async def create_workspace(
 
     workspace = Workspace(id=uuid.uuid4(), **data)
     db.add(workspace)
+    await db.flush()  # get workspace.id before commit
+
+    # Auto-create the "One-Offs" catch-all series for standalone videos
+    from app.models.project import Project, ProjectType
+    one_offs = Project(
+        id=uuid.uuid4(),
+        workspace_id=workspace.id,
+        name="One-Offs",
+        type=ProjectType.anthology,
+        story_bible={"series_concept": "Standalone videos that don't belong to a specific series."},
+    )
+    db.add(one_offs)
+
     await db.commit()
     await db.refresh(workspace)
     return workspace
