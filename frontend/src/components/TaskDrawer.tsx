@@ -55,7 +55,7 @@ export function TaskDrawer({ task, onClose, onUpdated }: Props) {
 
         <form onSubmit={handleSave} className={styles.form}>
           <label className={styles.label}>
-            Concept brief
+            Video brief
             <span className={styles.labelHint}>Required to approve</span>
             <textarea
               className={styles.textarea}

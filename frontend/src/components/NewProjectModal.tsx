@@ -76,7 +76,7 @@ export function NewProjectModal({ onConfirm, onCancel }: Props) {
   return (
     <div className={styles.overlay} onClick={onCancel}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <h2 className={styles.title}>New Project</h2>
+        <h2 className={styles.title}>New Series</h2>
         <form onSubmit={handleSubmit} className={styles.form}>
 
           {/* ── AI Brief ── */}
@@ -124,7 +124,7 @@ export function NewProjectModal({ onConfirm, onCancel }: Props) {
 
           {/* ── Form fields ── */}
           <label className={styles.label}>
-            Project name
+            Series name
             <input
               className={styles.input}
               value={name}
