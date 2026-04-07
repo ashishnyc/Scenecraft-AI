@@ -7,12 +7,6 @@ import { NewProjectModal } from './NewProjectModal';
 import { createProject } from '../api/projects';
 import styles from './Sidebar.module.css';
 
-// Workspace-level nav (always visible)
-const WORKSPACE_NAV = [
-  { to: '/',       label: 'Dashboard',     icon: '▦' },
-  { to: '/talent', label: 'Talent Roster', icon: '◉' },
-];
-
 // Series pipeline nav (only when a series is selected)
 const SERIES_NAV = [
   { to: '/tasks',        label: 'Videos',        icon: '▤' },
@@ -106,23 +100,6 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Workspace nav */}
-      <nav className={styles.nav}>
-        {WORKSPACE_NAV.map(({ to, label, icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
-            }
-            onClick={() => selectProject(null)}
-          >
-            <span className={styles.navIcon}>{icon}</span>
-            <span>{label}</span>
-          </NavLink>
-        ))}
-      </nav>
 
       {/* Series pipeline nav — only when series is selected */}
       {currentProject && (

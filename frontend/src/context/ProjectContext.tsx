@@ -25,8 +25,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     try {
       const list = await fetchProjects(currentWorkspace.id);
       setProjects(list);
-      // Keep currentProject in sync if it still exists
-      setCurrentProject((prev) => prev ? (list.find((p) => p.id === prev.id) ?? null) : null);
+      setCurrentProject((prev) => {
+        // Keep current selection in sync if it still exists
+        if (prev) return list.find((p) => p.id === prev.id) ?? null;
+        // Auto-select "One-Offs" as the default series
+        return list.find((p) => p.name === 'One-Offs') ?? list[0] ?? null;
+      });
     } catch {
       // fail silently
     } finally {
