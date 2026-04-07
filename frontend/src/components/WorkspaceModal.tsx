@@ -4,15 +4,17 @@ import Talent from '../pages/Talent';
 import Analytics from '../pages/Analytics';
 import Instagram from '../pages/Instagram';
 import Settings from '../pages/Settings';
+import AIConfigPage from '../pages/AIConfigPage';
 import styles from './WorkspaceModal.module.css';
 
-type Tab = 'dashboard' | 'talent' | 'analytics' | 'instagram' | 'settings';
+type Tab = 'dashboard' | 'talent' | 'analytics' | 'instagram' | 'ai' | 'settings';
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'dashboard',  label: 'Dashboard',     icon: '▦' },
   { id: 'talent',     label: 'Talent Roster', icon: '◉' },
   { id: 'analytics',  label: 'Analytics',     icon: '∿' },
   { id: 'instagram',  label: 'Instagram',     icon: '⬡' },
+  { id: 'ai',         label: 'AI',            icon: '✦' },
   { id: 'settings',   label: 'Settings',      icon: '⚙' },
 ];
 
@@ -48,6 +50,7 @@ export function WorkspaceModal({ defaultTab = 'dashboard', onClose }: Props) {
           {activeTab === 'talent'     && <Talent />}
           {activeTab === 'analytics'  && <Analytics />}
           {activeTab === 'instagram'  && <Instagram />}
+          {activeTab === 'ai'         && <AIConfigPage />}
           {activeTab === 'settings'   && <Settings />}
         </div>
       </div>
