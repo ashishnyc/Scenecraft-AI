@@ -9,15 +9,18 @@ import { useProject as useProjectCtx } from '../context/ProjectContext';
 import styles from './VideoTable.module.css';
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
-  idea:          '#6366f1',
-  approved:      '#818cf8',
-  scripting:     '#a78bfa',
-  audio_preview: '#f59e0b',
-  script_review: '#fbbf24',
-  final_review:  '#fb923c',
-  producing:     '#10b981',
-  scheduled:     '#34d399',
-  published:     '#4ade80',
+  brainstorm:      '#6366f1',
+  idea_review:     '#818cf8',
+  outline:         '#8b5cf6',
+  writing_review:  '#a78bfa',
+  generate_script: '#f59e0b',
+  script_review:   '#fbbf24',
+  generate_clips:  '#10b981',
+  assemble_clips:  '#34d399',
+  video_review:    '#4ade80',
+  prepare_metadata:'#3b82f6',
+  publish:         '#60a5fa',
+  closed:          '#93c5fd',
 };
 
 type SortKey = 'title' | 'status';
@@ -52,8 +55,11 @@ export default function VideoTable() {
   };
 
   const STATUS_ORDER: Record<TaskStatus, number> = {
-    idea: 0, approved: 1, scripting: 2, audio_preview: 3,
-    script_review: 4, producing: 5, final_review: 6, scheduled: 7, published: 8,
+    brainstorm: 0, idea_review: 1,
+    outline: 2, writing_review: 3,
+    generate_script: 4, script_review: 5,
+    generate_clips: 6, assemble_clips: 7, video_review: 8,
+    prepare_metadata: 9, publish: 10, closed: 11,
   };
 
   const filtered = tasks.filter(t =>

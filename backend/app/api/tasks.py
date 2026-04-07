@@ -323,37 +323,27 @@ async def transition_task(
             workspace_id=str(project.workspace_id),
         )
 
-    # Trigger outline generation when entering scripting state
-    if body.status == TaskStatus.scripting:
+    # Trigger script generation pipeline when entering generate_script state
+    if body.status == TaskStatus.generate_script:
         background_tasks.add_task(_run_outline_for_task, task.id)
 
-    # Trigger audio pipeline when entering audio_preview state
-    if body.status == TaskStatus.audio_preview:
-        changed_scenes: set[int] | None = (
-            set(body.changed_scene_numbers) if getattr(body, "changed_scene_numbers", None) else None
-        )
-        background_tasks.add_task(_run_audio_pipeline, task.id, changed_scenes)
-
-    # Mark audio stems as approved when script is approved (audio_preview → script_review)
-    if old_status == TaskStatus.audio_preview and body.status == TaskStatus.script_review:
-        background_tasks.add_task(_approve_audio_stems, task.id)
-
-    # Update story bible when script is approved (script_review → producing)
-    if old_status == TaskStatus.script_review and body.status == TaskStatus.producing:
+    # Update story bible when script is approved (script_review → generate_clips)
+    if old_status == TaskStatus.script_review and body.status == TaskStatus.generate_clips:
         background_tasks.add_task(_update_story_bible_for_task, task.id)
 
-    # Trigger video production pipeline when entering producing state
-    if body.status == TaskStatus.producing:
-        # Check if this is a re-edit (flagged shots exist from Gate 2 review)
+    # Trigger video clips generation when entering generate_clips state
+    if body.status == TaskStatus.generate_clips:
+        background_tasks.add_task(_run_video_pipeline, task.id)
+
+    # Trigger assembly when entering assemble_clips state
+    if body.status == TaskStatus.assemble_clips:
         script = task.script or {}
         flagged = (script.get("video_review") or {}).get("flagged_shot_indices", [])
-        if flagged and old_status == TaskStatus.final_review:
+        if flagged and old_status == TaskStatus.video_review:
             background_tasks.add_task(_run_scene_re_edit, task.id)
-        else:
-            background_tasks.add_task(_run_video_pipeline, task.id)
 
-    # Trigger YouTube upload when task moves to scheduled
-    if body.status == TaskStatus.scheduled:
+    # Trigger YouTube upload when task moves to publish
+    if body.status == TaskStatus.publish:
         background_tasks.add_task(_run_youtube_upload, task.id)
 
     return task
@@ -608,22 +598,22 @@ async def _run_video_pipeline(task_id: uuid.UUID) -> None:
             await db.commit()
 
             if quality_report.get("passed"):
-                # Auto-advance to final_review
+                # Auto-advance to assemble_clips
                 from app.services.state_machine import validate_transition
                 try:
-                    validate_transition(task.status, TaskStatus.final_review, task)
-                    task.status = TaskStatus.final_review
+                    validate_transition(task.status, TaskStatus.assemble_clips, task)
+                    task.status = TaskStatus.assemble_clips
                     await db.commit()
                     workspace = await db.get(Workspace, project.workspace_id)
                     if workspace:
                         from app.services.pubsub import publish_task_event
                         await publish_task_event(
                             task_id=str(task_id),
-                            status=TaskStatus.final_review.value,
+                            status=TaskStatus.assemble_clips.value,
                             workspace_id=str(workspace.id),
                         )
                 except Exception as exc:
-                    logger.warning("Could not auto-advance to final_review (task %s): %s", task_id, exc)
+                    logger.warning("Could not auto-advance to assemble_clips (task %s): %s", task_id, exc)
 
 
 async def _run_scene_re_edit(task_id: uuid.UUID) -> None:
@@ -633,13 +623,13 @@ async def _run_scene_re_edit(task_id: uuid.UUID) -> None:
     try:
         quality_report = await re_edit_flagged_scenes(str(task_id))
         if quality_report and quality_report.get("passed"):
-            # Auto-advance back to final_review
+            # Auto-advance back to video_review
             from app.db.postgres import AsyncSessionLocal
             from app.models.project import Project
             async with AsyncSessionLocal() as db:
                 task = await db.get(Task, task_id)
                 if task:
-                    task.status = TaskStatus.final_review
+                    task.status = TaskStatus.video_review
                     await db.commit()
                     project = await db.get(Project, task.project_id)
                     if project:
@@ -648,7 +638,7 @@ async def _run_scene_re_edit(task_id: uuid.UUID) -> None:
                         if workspace:
                             await publish_task_event(
                                 task_id=str(task_id),
-                                status=TaskStatus.final_review.value,
+                                status=TaskStatus.video_review.value,
                                 workspace_id=str(workspace.id),
                             )
     except Exception as exc:
@@ -674,7 +664,7 @@ async def _run_youtube_upload(task_id: uuid.UUID) -> None:
                 task = await db.get(Task, task_id)
                 if task:
                     task.youtube_video_id = video_id
-                    task.status = TaskStatus.published
+                    task.status = TaskStatus.closed
                     await db.commit()
                     project = await db.get(Project, task.project_id)
                     if project:
@@ -683,10 +673,10 @@ async def _run_youtube_upload(task_id: uuid.UUID) -> None:
                         if workspace:
                             await publish_task_event(
                                 task_id=str(task_id),
-                                status=TaskStatus.published.value,
+                                status=TaskStatus.closed.value,
                                 workspace_id=str(workspace.id),
                             )
-            logger.info("Task %s published to YouTube: %s", task_id, video_id)
+            logger.info("Task %s closed after YouTube upload: %s", task_id, video_id)
         else:
             logger.warning("YouTube upload returned no video_id for task %s", task_id)
     except Exception as exc:

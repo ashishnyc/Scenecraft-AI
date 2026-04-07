@@ -1,25 +1,29 @@
 """Task lifecycle state machine.
 
-Valid transitions:
-  idea → approved → scripting → audio_preview → script_review
-       → producing → final_review → scheduled → published
+Valid transitions (linear pipeline):
+  brainstorm → idea_review → outline → writing_review →
+  generate_script → script_review → generate_clips →
+  assemble_clips → video_review → prepare_metadata → publish → closed
 
 Guards:
-  → approved   requires concept_brief to be set
+  → idea_review   requires concept_brief to be set
 """
 from app.models.task import TaskStatus
 
 # Map each status to the set of statuses it can transition TO
 VALID_TRANSITIONS: dict[TaskStatus, set[TaskStatus]] = {
-    TaskStatus.idea:          {TaskStatus.approved},
-    TaskStatus.approved:      {TaskStatus.scripting},
-    TaskStatus.scripting:     {TaskStatus.audio_preview},
-    TaskStatus.audio_preview: {TaskStatus.script_review},
-    TaskStatus.script_review: {TaskStatus.producing},
-    TaskStatus.producing:     {TaskStatus.final_review},
-    TaskStatus.final_review:  {TaskStatus.scheduled},
-    TaskStatus.scheduled:     {TaskStatus.published},
-    TaskStatus.published:     set(),
+    TaskStatus.brainstorm:      {TaskStatus.idea_review},
+    TaskStatus.idea_review:     {TaskStatus.outline},
+    TaskStatus.outline:         {TaskStatus.writing_review},
+    TaskStatus.writing_review:  {TaskStatus.generate_script},
+    TaskStatus.generate_script: {TaskStatus.script_review},
+    TaskStatus.script_review:   {TaskStatus.generate_clips},
+    TaskStatus.generate_clips:  {TaskStatus.assemble_clips},
+    TaskStatus.assemble_clips:  {TaskStatus.video_review},
+    TaskStatus.video_review:    {TaskStatus.prepare_metadata},
+    TaskStatus.prepare_metadata:{TaskStatus.publish},
+    TaskStatus.publish:         {TaskStatus.closed},
+    TaskStatus.closed:          set(),
 }
 
 
@@ -46,10 +50,10 @@ def validate_transition(current: TaskStatus, target: TaskStatus, task) -> None:
             f"Allowed next states: {[s.value for s in allowed] or 'none (terminal state)'}."
         )
 
-    # Guard: idea → approved requires concept_brief
-    if current == TaskStatus.idea and target == TaskStatus.approved:
+    # Guard: brainstorm → idea_review requires concept_brief
+    if current == TaskStatus.brainstorm and target == TaskStatus.idea_review:
         if not task.concept_brief:
             raise TransitionGuardError(
-                "Cannot approve a task without a concept_brief. "
-                "Set concept_brief before approving."
+                "Cannot submit for review without a concept_brief. "
+                "Set concept_brief before moving to review."
             )

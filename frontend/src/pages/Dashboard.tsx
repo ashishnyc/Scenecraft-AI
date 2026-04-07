@@ -9,12 +9,20 @@ import type { Task } from '../api/tasks';
 import { apiClient } from '../api/client';
 import styles from './Dashboard.module.css';
 
-const STATUS_ORDER = ['idea', 'approved', 'scripting', 'audio_preview', 'script_review', 'producing', 'final_review', 'scheduled', 'published'];
+const STATUS_ORDER = [
+  'brainstorm', 'idea_review',
+  'outline', 'writing_review',
+  'generate_script', 'script_review',
+  'generate_clips', 'assemble_clips', 'video_review',
+  'prepare_metadata', 'publish', 'closed',
+];
 
 const PHASE_COLORS: Record<string, string> = {
-  idea: '#6366f1', approved: '#6366f1', scripting: '#6366f1',
-  audio_preview: '#f59e0b', script_review: '#f59e0b', final_review: '#f59e0b',
-  producing: '#10b981', scheduled: '#10b981', published: '#10b981',
+  brainstorm: '#6366f1',      idea_review: '#6366f1',
+  outline: '#8b5cf6',         writing_review: '#8b5cf6',
+  generate_script: '#f59e0b', script_review: '#f59e0b',
+  generate_clips: '#10b981',  assemble_clips: '#10b981', video_review: '#10b981',
+  prepare_metadata: '#3b82f6',publish: '#3b82f6', closed: '#3b82f6',
 };
 
 function StatusBar({ counts }: { counts: Record<string, number> }) {
@@ -93,7 +101,7 @@ export default function Dashboard() {
   const totalVideos = Object.values(tasksBySeries).reduce((n, tasks) => n + tasks.length, 0);
   const publishedVideos = Object.values(tasksBySeries)
     .flat()
-    .filter((t) => t.status === 'published').length;
+    .filter((t) => t.status === 'publish' || t.status === 'closed').length;
 
   return (
     <main className={styles.container}>

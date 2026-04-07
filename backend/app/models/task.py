@@ -9,15 +9,23 @@ from app.db.postgres import Base
 
 
 class TaskStatus(str, enum.Enum):
-    idea = "idea"
-    approved = "approved"
-    scripting = "scripting"
-    audio_preview = "audio_preview"
+    # Stage 1: Idea
+    brainstorm = "brainstorm"
+    idea_review = "idea_review"
+    # Stage 2: Writing
+    outline = "outline"
+    writing_review = "writing_review"
+    # Stage 3: Scripting
+    generate_script = "generate_script"
     script_review = "script_review"
-    producing = "producing"
-    final_review = "final_review"
-    scheduled = "scheduled"
-    published = "published"
+    # Stage 4: Video
+    generate_clips = "generate_clips"
+    assemble_clips = "assemble_clips"
+    video_review = "video_review"
+    # Stage 5: Upload to YouTube
+    prepare_metadata = "prepare_metadata"
+    publish = "publish"
+    closed = "closed"
 
 
 class Task(Base):
@@ -26,7 +34,7 @@ class Task(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    status: Mapped[TaskStatus] = mapped_column(Enum(TaskStatus), default=TaskStatus.idea, nullable=False)
+    status: Mapped[TaskStatus] = mapped_column(Enum(TaskStatus), default=TaskStatus.brainstorm, nullable=False)
     concept_brief: Mapped[str | None] = mapped_column(Text, nullable=True)
     creator_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     script: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
