@@ -277,21 +277,6 @@
 }
 
 /* ── Brief (Idea tab) ── */
-.briefCard {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.briefCardHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 
 .briefEditActions {
   display: flex;
@@ -607,6 +592,11 @@
   justify-self: center;
 }
 
+.historyDotCurrent {
+  background: var(--color-accent-primary);
+  border-color: var(--color-accent-primary);
+}
+
 .historyLine {
   grid-column: 2;
   grid-row: 1 / 3;
@@ -649,6 +639,22 @@
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
+}
+
+.historyDeleteBtn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  opacity: 0.4;
+  padding: 0 var(--space-1);
+  line-height: 1;
+  transition: opacity 0.15s;
+}
+
+.historyDeleteBtn:hover {
+  opacity: 1;
 }
 
 .historyContent {

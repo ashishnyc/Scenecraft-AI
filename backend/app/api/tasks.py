@@ -90,8 +90,8 @@ async def update_task(
 
     updates = body.model_dump(exclude_none=True)
 
-    # Append to brief_history when concept_brief changes
-    if "concept_brief" in updates and updates["concept_brief"] != task.concept_brief:
+    # Append to brief_history when concept_brief changes (skip if caller is directly updating history)
+    if "concept_brief" in updates and updates["concept_brief"] != task.concept_brief and "brief_history" not in updates:
         from datetime import datetime, timezone
         history = list(task.brief_history or [])
         source = getattr(body, "_source", "manual")

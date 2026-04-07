@@ -16,6 +16,7 @@ class TaskUpdate(BaseModel):
     concept_brief: str | None = None
     creator_notes: str | None = None
     script: dict | None = None
+    brief_history: list | None = None
 
 
 class TaskTransitionRequest(BaseModel):
