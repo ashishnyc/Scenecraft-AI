@@ -8,16 +8,21 @@ import { NewWorkspaceModal } from './NewWorkspaceModal';
 import { createProject } from '../api/projects';
 import styles from './Sidebar.module.css';
 
-const NAV_ITEMS = [
-  { to: '/',             label: 'Dashboard',     icon: '▦'  },
-  { to: '/tasks',        label: 'Videos',        icon: '▤'  },
-  { to: '/scripts',      label: 'Script Review', icon: '✎'  },
-  { to: '/video-review', label: 'Video Review',  icon: '▶'  },
-  { to: '/publish',      label: 'Publish',       icon: '↑'  },
-  { to: '/talent',       label: 'Talent Roster', icon: '◉'  },
-  { to: '/analytics',    label: 'Analytics',     icon: '∿'  },
-  { to: '/instagram',    label: 'Instagram',     icon: '⬡'  },
-  { to: '/settings',     label: 'Settings',      icon: '⚙'  },
+// Always visible (workspace-level)
+const WORKSPACE_NAV = [
+  { to: '/',          label: 'Dashboard',     icon: '▦' },
+  { to: '/talent',    label: 'Talent Roster', icon: '◉' },
+  { to: '/analytics', label: 'Analytics',     icon: '∿' },
+  { to: '/instagram', label: 'Instagram',     icon: '⬡' },
+  { to: '/settings',  label: 'Settings',      icon: '⚙' },
+];
+
+// Only visible when a series is selected
+const SERIES_NAV = [
+  { to: '/tasks',        label: 'Videos',        icon: '▤' },
+  { to: '/scripts',      label: 'Script Review', icon: '✎' },
+  { to: '/video-review', label: 'Video Review',  icon: '▶' },
+  { to: '/publish',      label: 'Publish',       icon: '↑' },
 ];
 
 function toHandle(name: string) {
@@ -100,9 +105,9 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Workspace-level navigation */}
       <nav className={styles.nav}>
-        {NAV_ITEMS.map(({ to, label, icon }) => (
+        {WORKSPACE_NAV.map(({ to, label, icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -117,6 +122,37 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Series pipeline nav — only when a series is selected */}
+      {currentProject && (
+        <>
+          <div className={styles.seriesContext}>
+            <div className={styles.seriesContextLabel}>Current series</div>
+            <div className={styles.seriesContextName}>{currentProject.name}</div>
+            <button
+              className={styles.seriesContextClose}
+              onClick={() => { selectProject(null); }}
+              title="Back to workspace"
+            >
+              ✕
+            </button>
+          </div>
+          <nav className={styles.nav}>
+            {SERIES_NAV.map(({ to, label, icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
+                }
+              >
+                <span className={styles.navIcon}>{icon}</span>
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </>
+      )}
 
       {/* Series section */}
       <div className={styles.projectsSection}>
