@@ -139,7 +139,7 @@ export default function ProjectDetail() {
       <h1 className={styles.title}>{currentProject.name}</h1>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Project settings</h2>
+        <h2 className={styles.sectionTitle}>Series settings</h2>
         <form onSubmit={handleSave} className={styles.form}>
           <label className={styles.label}>
             Name
@@ -156,7 +156,7 @@ export default function ProjectDetail() {
           </label>
 
           <label className={styles.label}>
-            Episode count
+            Video count
             <input className={styles.input} type="number" min="1" value={episodeCount}
               onChange={(e) => setEpisodeCount(e.target.value)} placeholder="—" />
           </label>
@@ -187,7 +187,7 @@ export default function ProjectDetail() {
       {/* ── Episode Ideas ── */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Episode ideas</h2>
+          <h2 className={styles.sectionTitle}>Video ideas</h2>
           <button
             type="button"
             className={styles.generateBtn}
@@ -229,11 +229,11 @@ export default function ProjectDetail() {
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Episodes</h2>
+        <h2 className={styles.sectionTitle}>Videos</h2>
         {epLoading ? (
           <p className={styles.empty}>Loading…</p>
         ) : episodes.length === 0 ? (
-          <p className={styles.empty}>No episodes yet. Create one from an idea above.</p>
+          <p className={styles.empty}>No videos yet. Create one from an idea above.</p>
         ) : (
           <table className={styles.table}>
             <thead>

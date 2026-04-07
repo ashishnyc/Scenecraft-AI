@@ -10,7 +10,7 @@ import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
   { to: '/',             label: 'Dashboard',     icon: '▦'  },
-  { to: '/tasks',        label: 'Tasks',         icon: '▤'  },
+  { to: '/tasks',        label: 'Videos',        icon: '▤'  },
   { to: '/scripts',      label: 'Script Review', icon: '✎'  },
   { to: '/video-review', label: 'Video Review',  icon: '▶'  },
   { to: '/publish',      label: 'Publish',       icon: '↑'  },
@@ -118,10 +118,10 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Projects section */}
+      {/* Series section */}
       <div className={styles.projectsSection}>
         <div className={styles.projectsHeader}>
-          <span className={styles.projectsLabel}>Projects</span>
+          <span className={styles.projectsLabel}>Series</span>
         </div>
         <ul className={styles.projectList}>
           {projects.map((p) => (
@@ -137,7 +137,7 @@ export function Sidebar() {
           ))}
           <li>
             <button className={styles.newProjectBtn} onClick={() => setShowNewProject(true)}>
-              + New Project
+              + New Series
             </button>
           </li>
         </ul>

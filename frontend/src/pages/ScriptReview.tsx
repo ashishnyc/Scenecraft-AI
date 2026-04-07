@@ -3,6 +3,8 @@ import { useProject } from '../context/ProjectContext';
 import { fetchTasksForWorkspace, type Task } from '../api/tasks';
 import { approveAudio, requestAudioChanges, type AudioStems } from '../api/audio';
 import { useWorkspace } from '../context/WorkspaceContext';
+import type { Character, Casting } from '../api/characters';
+import { fetchCast, castCharacter, removeFromCast, fetchCharacters } from '../api/characters';
 import styles from './ScriptReview.module.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -105,6 +107,35 @@ export default function ScriptReview() {
   const [activeScene, setActiveScene] = useState<number>(1);
   const [activeLineIndex, setActiveLineIndex] = useState<number>(-1);
   const [sceneNotes, setSceneNotes] = useState<Record<number, string>>({});
+
+  // Cast state (SA-100)
+  const [cast, setCast] = useState<Casting[]>([]);
+  const [allCharacters, setAllCharacters] = useState<Character[]>([]);
+  const [castPickerOpen, setCastPickerOpen] = useState(false);
+
+  // Load cast + all characters (SA-100)
+  useEffect(() => {
+    if (!currentProject) return;
+    fetchCast(currentProject.id).then(setCast).catch(() => {});
+    fetchCharacters().then(setAllCharacters).catch(() => {});
+  }, [currentProject]);
+
+  const handleCastAdd = async (characterId: string) => {
+    if (!currentProject) return;
+    try {
+      const casting = await castCharacter(currentProject.id, { character_id: characterId, role: 'supporting' });
+      setCast((prev) => [...prev, casting]);
+      setCastPickerOpen(false);
+    } catch { /* already cast or error */ }
+  };
+
+  const handleCastRemove = async (castingId: string) => {
+    if (!currentProject) return;
+    try {
+      await removeFromCast(currentProject.id, castingId);
+      setCast((prev) => prev.filter((c) => c.id !== castingId));
+    } catch { /* ignore */ }
+  };
 
   // Load tasks for the current project
   useEffect(() => {
@@ -337,6 +368,48 @@ export default function ScriptReview() {
               )}
             </div>
           ))}
+
+          {/* Inline cast panel (SA-100) */}
+          {currentProject && (
+            <div className={styles.castPanel}>
+              <div className={styles.castHeader}>
+                <span className={styles.castLabel}>Cast</span>
+                <button className={styles.castAddBtn} onClick={() => setCastPickerOpen((o) => !o)}>
+                  {castPickerOpen ? '✕' : '+ Add'}
+                </button>
+              </div>
+
+              {castPickerOpen && (
+                <div className={styles.castPicker}>
+                  {allCharacters
+                    .filter((ch) => !cast.some((c) => c.character_id === ch.id))
+                    .map((ch) => (
+                      <button key={ch.id} className={styles.castPickerItem} onClick={() => handleCastAdd(ch.id)}>
+                        {ch.name}
+                      </button>
+                    ))}
+                  {allCharacters.filter((ch) => !cast.some((c) => c.character_id === ch.id)).length === 0 && (
+                    <p className={styles.castEmpty}>All characters cast</p>
+                  )}
+                </div>
+              )}
+
+              {cast.length === 0 ? (
+                <p className={styles.castEmpty}>No characters cast yet</p>
+              ) : (
+                cast.map((c) => {
+                  const char = allCharacters.find((ch) => ch.id === c.character_id);
+                  return (
+                    <div key={c.id} className={styles.castItem}>
+                      <span className={styles.castName}>{char?.name ?? 'Unknown'}</span>
+                      <span className={styles.castRole}>{c.role}</span>
+                      <button className={styles.castRemoveBtn} onClick={() => handleCastRemove(c.id)}>✕</button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         {/* Script panel */}
