@@ -108,47 +108,8 @@ function DraggableCard({ task, onOpen }: { task: Task; onOpen: (t: Task) => void
   );
 }
 
-// ── Vertical timeline status row (droppable) ──────────────────────────────────
-function StatusRow({
-  status,
-  tasks,
-  onOpen,
-  isLast,
-}: {
-  status: TaskStatus;
-  tasks: Task[];
-  onOpen: (t: Task) => void;
-  isLast: boolean;
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id: status });
-  return (
-    <div className={styles.statusRow}>
-      <div className={styles.timelineLeft}>
-        <div className={`${styles.timelineDot} ${tasks.length > 0 ? styles.timelineDotActive : ''}`} />
-        {!isLast && <div className={styles.timelineLine} />}
-      </div>
-      <div
-        className={`${styles.statusContent} ${isOver ? styles.statusContentOver : ''}`}
-        ref={setNodeRef}
-      >
-        <div className={styles.statusLabel}>
-          {STATUS_LABELS[status]}
-          {tasks.length > 0 && <span className={styles.statusCount}>{tasks.length}</span>}
-        </div>
-        {tasks.length > 0 && (
-          <div className={styles.statusCards}>
-            {tasks.map((task) => (
-              <DraggableCard key={task.id} task={task} onOpen={onOpen} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Vertical phase column ─────────────────────────────────────────────────────
-function VerticalPhaseColumn({
+// ── Flat phase column (single droppable, no inner timeline) ──────────────────
+function PhaseColumn({
   phase,
   tasksByStatus,
   onOpen,
@@ -157,23 +118,19 @@ function VerticalPhaseColumn({
   tasksByStatus: Record<TaskStatus, Task[]>;
   onOpen: (t: Task) => void;
 }) {
-  const total = phase.statuses.reduce((n, s) => n + tasksByStatus[s].length, 0);
+  const { setNodeRef, isOver } = useDroppable({ id: phase.label });
+  const tasks = phase.statuses.flatMap((s) => tasksByStatus[s]);
   return (
-    <div className={styles.phaseCol}>
+    <div className={`${styles.phaseCol} ${isOver ? styles.phaseColOver : ''}`}>
       <div className={styles.phaseColHeader}>
         <span className={styles.phaseColLabel}>{phase.label}</span>
-        {total > 0 && <span className={styles.phaseColCount}>{total}</span>}
+        {tasks.length > 0 && <span className={styles.phaseColCount}>{tasks.length}</span>}
       </div>
-      <div className={styles.phaseColBody}>
-        {phase.statuses.map((status, idx) => (
-          <StatusRow
-            key={status}
-            status={status}
-            tasks={tasksByStatus[status]}
-            onOpen={onOpen}
-            isLast={idx === phase.statuses.length - 1}
-          />
-        ))}
+      <div className={styles.phaseColBody} ref={setNodeRef}>
+        {tasks.length === 0
+          ? <p className={styles.phaseColEmpty}>Drop cards here</p>
+          : tasks.map((task) => <DraggableCard key={task.id} task={task} onOpen={onOpen} />)
+        }
       </div>
     </div>
   );
@@ -231,9 +188,14 @@ export default function Tasks() {
   const handleDragEnd = async ({ active, over }: DragEndEvent) => {
     setActiveTask(null);
     if (!over) return;
-    const targetStatus = over.id as TaskStatus;
     const task = tasks.find((t) => t.id === active.id);
-    if (!task || task.status === targetStatus) return;
+    if (!task) return;
+    // Resolve phase label → first status of that phase
+    const targetPhase = PHASES.find((p) => p.label === over.id);
+    if (!targetPhase) return;
+    // Already in this phase — no-op
+    if (targetPhase.statuses.includes(task.status)) return;
+    const targetStatus = targetPhase.statuses[0];
 
     setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: targetStatus } : t));
 
@@ -273,7 +235,7 @@ export default function Tasks() {
 
             {/* Phase columns: Writing, Review, Production */}
             {PHASES.map((phase) => (
-              <VerticalPhaseColumn
+              <PhaseColumn
                 key={phase.label}
                 phase={phase}
                 tasksByStatus={tasksByStatus}
