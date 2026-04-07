@@ -34,5 +34,6 @@ class TaskResponse(BaseModel):
     final_video_url: str | None
     youtube_video_id: str | None
     total_cost_usd: Decimal | None
+    brief_history: list | None
 
     model_config = {"from_attributes": True}

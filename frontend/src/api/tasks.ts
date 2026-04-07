@@ -1,5 +1,11 @@
 import { apiClient } from './client';
 
+export interface BriefVersion {
+  content: string;
+  created_at: string;
+  source: 'manual' | 'ai';
+}
+
 export interface Task {
   id: string;
   project_id: string;
@@ -11,6 +17,7 @@ export interface Task {
   final_video_url: string | null;
   youtube_video_id: string | null;
   total_cost_usd: string | null;
+  brief_history: BriefVersion[] | null;
 }
 
 export type TaskStatus =
@@ -85,7 +92,10 @@ export async function deleteTask(taskId: string): Promise<void> {
   await apiClient.delete(`/tasks/${taskId}`);
 }
 
-export async function updateTask(taskId: string, body: { title?: string; concept_brief?: string; creator_notes?: string }): Promise<Task> {
+export async function updateTask(
+  taskId: string,
+  body: { title?: string; concept_brief?: string; creator_notes?: string; _source?: 'manual' | 'ai' },
+): Promise<Task> {
   const res = await apiClient.put<Task>(`/tasks/${taskId}`, body);
   return res.data;
 }
