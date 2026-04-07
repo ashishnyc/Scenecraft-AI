@@ -9,8 +9,6 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { useProject } from '../context/ProjectContext';
 import type { Task, TaskStatus } from '../api/tasks';
 import { TASK_STATUSES, STATUS_LABELS, fetchTasksForWorkspace, transitionTask } from '../api/tasks';
-import type { Pitch } from '../api/pitches';
-import { fetchPitches, approvePitch, rejectPitch } from '../api/pitches';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { Toast } from '../components/Toast';
 import { VideoModal } from '../components/VideoModal';
@@ -37,6 +35,12 @@ const PHASES = [
   { label: 'Production', statuses: ['producing', 'scheduled', 'published'] as TaskStatus[] },
 ];
 
+// Map each status back to its phase
+const PHASE_FOR_STATUS: Record<TaskStatus, typeof PHASES[number]> = {} as Record<TaskStatus, typeof PHASES[number]>;
+for (const phase of PHASES) {
+  for (const s of phase.statuses) PHASE_FOR_STATUS[s] = phase;
+}
+
 // Statuses that indicate active background processing
 const ACTIVE_STATUSES = new Set<TaskStatus>(['scripting', 'audio_preview', 'producing']);
 
@@ -50,6 +54,9 @@ interface TaskCardProps {
 function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
   const isActive = ACTIVE_STATUSES.has(task.status);
   const hasBrief = !!task.concept_brief;
+  const phase = PHASE_FOR_STATUS[task.status];
+  const currentIdx = phase.statuses.indexOf(task.status);
+
   return (
     <div
       className={`${styles.card} ${isDragging ? styles.cardDragging : ''}`}
@@ -59,7 +66,29 @@ function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
         <p className={styles.cardTitle}>{task.title}</p>
         {isActive && <span className={styles.activeDot} title="Processing…" />}
       </div>
-      <p className={styles.nextAction}>{NEXT_ACTION[task.status]}</p>
+
+      {/* Mini vertical pipeline timeline */}
+      <div className={styles.cardTimeline}>
+        {phase.statuses.map((s, idx) => {
+          const done    = idx < currentIdx;
+          const current = idx === currentIdx;
+          const isLast  = idx === phase.statuses.length - 1;
+          return (
+            <div key={s} className={styles.cardTimelineRow}>
+              <div className={styles.cardTimelineLeft}>
+                <div className={`${styles.cardTlDot} ${done ? styles.cardTlDotDone : current ? styles.cardTlDotCurrent : ''}`}>
+                  {done && <span className={styles.cardTlCheck}>✓</span>}
+                </div>
+                {!isLast && <div className={styles.cardTlLine} />}
+              </div>
+              <span className={`${styles.cardTlLabel} ${done ? styles.cardTlLabelDone : current ? styles.cardTlLabelCurrent : ''}`}>
+                {STATUS_LABELS[s]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
       {!hasBrief && task.status === 'idea' && (
         <span className={styles.noBriefHint}>needs brief</span>
       )}
@@ -147,33 +176,11 @@ function VerticalPhaseColumn({
   );
 }
 
-// ── AI Ideas pitch card ───────────────────────────────────────────────────────
-function PitchCard({
-  pitch,
-  onApprove,
-  onReject,
-}: { pitch: Pitch; onApprove: (p: Pitch) => void; onReject: (p: Pitch) => void }) {
-  return (
-    <div className={styles.pitchCard}>
-      <p className={styles.cardTitle}>{pitch.title}</p>
-      <p className={styles.pitchSummary}>{pitch.concept_summary}</p>
-      {pitch.appeal_score != null && (
-        <span className={styles.appealBadge}>Appeal {pitch.appeal_score}/10</span>
-      )}
-      <div className={styles.pitchActions}>
-        <button className={styles.pitchApproveBtn} onClick={() => onApprove(pitch)}>→ Add to board</button>
-        <button className={styles.pitchRejectBtn} onClick={() => onReject(pitch)}>✕</button>
-      </div>
-    </div>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function Tasks() {
   const { currentWorkspace } = useWorkspace();
   const { currentProject, projects } = useProject();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [pitches, setPitches] = useState<Pitch[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [modalTask, setModalTask] = useState<Task | null>(null);
@@ -186,12 +193,8 @@ export default function Tasks() {
     if (!currentWorkspace) return;
     setLoading(true);
     try {
-      const [taskData, pitchData] = await Promise.all([
-        fetchTasksForWorkspace(currentWorkspace.id),
-        fetchPitches(currentWorkspace.id, 'pending').catch(() => [] as Pitch[]),
-      ]);
+      const taskData = await fetchTasksForWorkspace(currentWorkspace.id);
       setTasks(taskData);
-      setPitches(pitchData);
     } finally {
       setLoading(false);
     }
@@ -246,27 +249,6 @@ export default function Tasks() {
     setModalTask(updated);
   };
 
-  const handleApprovePitch = async (pitch: Pitch) => {
-    if (!currentWorkspace) return;
-    try {
-      const task = await approvePitch(currentWorkspace.id, pitch.id, currentProject?.id);
-      setPitches((prev) => prev.filter((p) => p.id !== pitch.id));
-      setTasks((prev) => [...prev, task]);
-    } catch {
-      setToast('Failed to approve pitch');
-    }
-  };
-
-  const handleRejectPitch = async (pitch: Pitch) => {
-    if (!currentWorkspace) return;
-    try {
-      await rejectPitch(currentWorkspace.id, pitch.id);
-      setPitches((prev) => prev.filter((p) => p.id !== pitch.id));
-    } catch {
-      setToast('Failed to reject pitch');
-    }
-  };
-
   if (!currentWorkspace) {
     return <main className={styles.container}><p className={styles.empty}>Select a workspace first.</p></main>;
   }
@@ -285,28 +267,6 @@ export default function Tasks() {
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className={styles.board}>
-
-            {/* AI Ideas column */}
-            <div className={styles.phaseCol}>
-              <div className={styles.phaseColHeader}>
-                <span className={styles.phaseColLabel}>AI Ideas</span>
-                {pitches.length > 0 && <span className={styles.phaseColCount}>{pitches.length}</span>}
-              </div>
-              <div className={styles.phaseColBody}>
-                {pitches.length === 0 ? (
-                  <p className={styles.pitchEmpty}>No AI ideas pending</p>
-                ) : (
-                  pitches.map((p) => (
-                    <PitchCard
-                      key={p.id}
-                      pitch={p}
-                      onApprove={handleApprovePitch}
-                      onReject={handleRejectPitch}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
 
             {/* Phase columns: Writing, Review, Production */}
             {PHASES.map((phase) => (
