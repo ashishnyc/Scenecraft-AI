@@ -64,3 +64,14 @@ export async function suggestProject(workspaceId: string, brief: string): Promis
   );
   return res.data;
 }
+
+export async function generateMoreConcepts(
+  projectId: string,
+  brief?: string,
+): Promise<VideoConceptSuggestion[]> {
+  const res = await apiClient.post<VideoConceptSuggestion[]>(
+    `/projects/${projectId}/concepts/generate`,
+    { brief },
+  );
+  return res.data;
+}

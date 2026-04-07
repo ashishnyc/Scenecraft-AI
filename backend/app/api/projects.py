@@ -80,6 +80,38 @@ async def list_projects(
     return result.scalars().all()
 
 
+class ConceptGenerateRequest(BaseModel):
+    brief: str | None = None  # optional extra context; if omitted uses project name
+
+
+@router.post("/projects/{project_id}/concepts/generate", response_model=list[VideoConceptSuggestion])
+async def generate_concepts(
+    project_id: uuid.UUID,
+    body: ConceptGenerateRequest,
+    db: AsyncSession = Depends(get_db),
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Generate additional episode concept ideas for an existing project."""
+    project = await db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    from app.services.project_suggester import generate_concepts as _gen
+    brief = body.brief or project.name
+    story_bible = project.story_bible or {}
+    result = _gen(
+        brief=brief,
+        series_concept=story_bible.get("series_concept", ""),
+        existing_concepts=story_bible.get("base_video_concepts", []),
+    )
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LLM unavailable — check OLLAMA_BASE_URL and model configuration.",
+        )
+    return result
+
+
 @router.get("/projects/{project_id}", response_model=ProjectResponse)
 async def get_project(
     project_id: uuid.UUID,
