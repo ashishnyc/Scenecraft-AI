@@ -38,6 +38,11 @@ def llm_chat(
     """
     Synchronous LLM call via Ollama.
     Returns the response text, or None on failure / missing config.
+
+    Note: reasoning/thinking models (e.g. kimi-k2.5:cloud) spend tokens on an
+    internal chain-of-thought before writing content. We always request at least
+    8 000 tokens so the model has room to reason AND respond. Callers may pass a
+    higher value if they need a longer output.
     """
     from app.core.config import get_settings
     settings = get_settings()
@@ -48,17 +53,28 @@ def llm_chat(
 
     client, model = _get_client()
 
+    # Reasoning models need a generous token budget; enforce a safe minimum.
+    effective_max_tokens = max(max_tokens, 8000)
+
     try:
         response = client.chat.completions.create(
             model=model,
-            max_tokens=max_tokens,
+            max_tokens=effective_max_tokens,
             temperature=temperature,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         )
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        if not content:
+            logger.error(
+                "Ollama returned empty content (finish_reason=%s). "
+                "Model may need more tokens for reasoning.",
+                response.choices[0].finish_reason,
+            )
+            return None
+        return content
     except Exception as exc:
         logger.error("Ollama LLM call failed: %s", exc)
         return None
