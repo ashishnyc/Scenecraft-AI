@@ -77,7 +77,7 @@ async def resolve_ai_config(
     """
     Resolve the AIConfig to use for a given workspace + feature.
 
-    Priority: feature override > workspace default > global .env
+    Priority: feature override (named config) > workspace default config > global .env
     Returns a fully-populated AIConfig with a decrypted API key.
     """
     from app.core.encryption import decrypt
@@ -86,6 +86,7 @@ async def resolve_ai_config(
     try:
         from sqlalchemy import select
         from app.models.workspace_ai_config import WorkspaceAIConfig
+        from app.models.workspace_ai_model_config import WorkspaceAIModelConfig
 
         ws_id = uuid.UUID(str(workspace_id))
         result = await db.execute(
@@ -99,22 +100,43 @@ async def resolve_ai_config(
     if cfg_row is None:
         return _global_config()
 
-    # Check for a feature-level override
-    override = (cfg_row.feature_overrides or {}).get(feature, {})
+    # Determine which named config to use
+    named_config_id: uuid.UUID | None = None
 
-    provider = override.get("provider") or cfg_row.provider
-    model    = override.get("model")    or cfg_row.model
-    base_url = override.get("base_url") or cfg_row.base_url
-
-    enc_key = override.get("api_key_encrypted") or cfg_row.api_key_encrypted
-    api_key: str | None = None
-    if enc_key:
+    feature_override_id = (cfg_row.feature_overrides or {}).get(feature)
+    if feature_override_id:
         try:
-            api_key = decrypt(enc_key)
-        except Exception:
-            logger.warning("Failed to decrypt API key for workspace %s", workspace_id)
+            named_config_id = uuid.UUID(str(feature_override_id))
+        except ValueError:
+            pass
 
-    return AIConfig(provider=provider, model=model, base_url=base_url, api_key=api_key)
+    if named_config_id is None:
+        named_config_id = cfg_row.default_config_id
+
+    if named_config_id is None:
+        return _global_config()
+
+    # Load the named config
+    try:
+        mc_result = await db.execute(
+            select(WorkspaceAIModelConfig).where(WorkspaceAIModelConfig.id == named_config_id)
+        )
+        mc = mc_result.scalar_one_or_none()
+    except Exception as exc:
+        logger.warning("Could not load named AI model config %s: %s", named_config_id, exc)
+        return _global_config()
+
+    if mc is None:
+        return _global_config()
+
+    api_key: str | None = None
+    if mc.api_key_encrypted:
+        try:
+            api_key = decrypt(mc.api_key_encrypted)
+        except Exception:
+            logger.warning("Failed to decrypt API key for config %s", named_config_id)
+
+    return AIConfig(provider=mc.provider, model=mc.model, base_url=mc.base_url, api_key=api_key)
 
 
 def llm_chat(
