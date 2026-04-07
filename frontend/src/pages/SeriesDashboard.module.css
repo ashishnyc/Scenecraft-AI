@@ -1,6 +1,6 @@
 .container {
   padding: var(--space-8);
-  max-width: 900px;
+  width: 100%;
 }
 
 .empty {
