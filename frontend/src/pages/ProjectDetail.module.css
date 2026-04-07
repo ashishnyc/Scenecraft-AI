@@ -78,6 +78,66 @@
 .saveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 .saveBtn:not(:disabled):hover { opacity: 0.9; }
 
+.formActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.deleteBtn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.deleteBtn:hover { border-color: #ef4444; color: #ef4444; }
+
+.confirmRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.confirmText {
+  font-size: var(--text-sm);
+  color: #fca5a5;
+}
+
+.confirmDeleteBtn {
+  background: #ef4444;
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.confirmDeleteBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.confirmDeleteBtn:not(:disabled):hover { background: #dc2626; }
+
+.cancelDeleteBtn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cancelDeleteBtn:hover { border-color: var(--color-text-secondary); }
+
 .table {
   width: 100%;
   border-collapse: collapse;

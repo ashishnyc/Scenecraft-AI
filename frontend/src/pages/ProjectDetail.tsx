@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import type { ProjectUpdate, VideoConceptSuggestion } from '../api/projects';
-import { updateProject, generateMoreConcepts } from '../api/projects';
+import { updateProject, generateMoreConcepts, deleteProject } from '../api/projects';
 import type { Task } from '../api/tasks';
 import { fetchTasksForWorkspace, createTask, STATUS_LABELS } from '../api/tasks';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -17,13 +17,15 @@ const PROJECT_STATUS_OPTIONS: SelectOption<NonNullable<ProjectUpdate['status']>>
 ];
 
 export default function ProjectDetail() {
-  const { currentProject, refreshProjects } = useProject();
+  const { currentProject, refreshProjects, selectProject } = useProject();
   const { currentWorkspace } = useWorkspace();
 
   const [name, setName] = useState('');
   const [status, setStatus] = useState<ProjectUpdate['status']>('active');
   const [episodeCount, setEpisodeCount] = useState('');
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const [episodes, setEpisodes] = useState<Task[]>([]);
@@ -80,6 +82,19 @@ export default function ProjectDetail() {
       setToast({ message: msg, type: 'error' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteProject(currentProject.id);
+      selectProject(null);
+      await refreshProjects();
+    } catch {
+      setToast({ message: 'Failed to delete project', type: 'error' });
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -146,9 +161,26 @@ export default function ProjectDetail() {
               onChange={(e) => setEpisodeCount(e.target.value)} placeholder="—" />
           </label>
 
-          <button type="submit" className={styles.saveBtn} disabled={saving}>
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
+          <div className={styles.formActions}>
+            <button type="submit" className={styles.saveBtn} disabled={saving}>
+              {saving ? 'Saving…' : 'Save changes'}
+            </button>
+            {!confirmDelete ? (
+              <button type="button" className={styles.deleteBtn} onClick={() => setConfirmDelete(true)}>
+                Delete project
+              </button>
+            ) : (
+              <div className={styles.confirmRow}>
+                <span className={styles.confirmText}>Delete "{currentProject.name}"?</span>
+                <button type="button" className={styles.confirmDeleteBtn} onClick={handleDelete} disabled={deleting}>
+                  {deleting ? 'Deleting…' : 'Yes, delete'}
+                </button>
+                <button type="button" className={styles.cancelDeleteBtn} onClick={() => setConfirmDelete(false)}>
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </form>
       </section>
 
