@@ -108,7 +108,7 @@ export function NewProjectModal({ onConfirm, onCancel }: Props) {
               {seriesConcept && (
                 <p className={styles.seriesConcept}>{seriesConcept}</p>
               )}
-              <p className={styles.suggestionsLabel}>Base video concepts</p>
+              <p className={styles.suggestionsLabel}>Episode ideas</p>
               <ul className={styles.conceptList}>
                 {concepts.map((c, i) => (
                   <li key={i} className={styles.conceptItem}>

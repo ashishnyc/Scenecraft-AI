@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
-import type { ProjectUpdate } from '../api/projects';
-import { updateProject } from '../api/projects';
+import type { ProjectUpdate, VideoConceptSuggestion } from '../api/projects';
+import { updateProject, generateMoreConcepts } from '../api/projects';
 import type { Task } from '../api/tasks';
-import { fetchTasksForWorkspace, STATUS_LABELS } from '../api/tasks';
+import { fetchTasksForWorkspace, createTask, STATUS_LABELS } from '../api/tasks';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { Toast } from '../components/Toast';
 import { Select } from '../components/Select';
@@ -21,7 +21,6 @@ export default function ProjectDetail() {
   const { currentWorkspace } = useWorkspace();
 
   const [name, setName] = useState('');
-  const [storyBible, setStoryBible] = useState('');
   const [status, setStatus] = useState<ProjectUpdate['status']>('active');
   const [episodeCount, setEpisodeCount] = useState('');
   const [saving, setSaving] = useState(false);
@@ -30,13 +29,22 @@ export default function ProjectDetail() {
   const [episodes, setEpisodes] = useState<Task[]>([]);
   const [epLoading, setEpLoading] = useState(false);
 
+  // Episode concept cards
+  const [concepts, setConcepts] = useState<VideoConceptSuggestion[]>([]);
+  const [seriesConcept, setSeriesConcept] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [creatingFrom, setCreatingFrom] = useState<number | null>(null); // index of concept being created
+
   // Sync form when project changes
   useEffect(() => {
     if (!currentProject) return;
     setName(currentProject.name);
-    setStoryBible(currentProject.story_bible ? JSON.stringify(currentProject.story_bible, null, 2) : '');
     setStatus(currentProject.status);
     setEpisodeCount(currentProject.episode_count != null ? String(currentProject.episode_count) : '');
+
+    const bible = currentProject.story_bible as Record<string, unknown> | null;
+    setSeriesConcept((bible?.series_concept as string) ?? '');
+    setConcepts((bible?.base_video_concepts as VideoConceptSuggestion[]) ?? []);
   }, [currentProject]);
 
   // Load episodes for this project
@@ -60,15 +68,10 @@ export default function ProjectDetail() {
     e.preventDefault();
     setSaving(true);
     try {
-      let parsedBible: Record<string, unknown> | undefined;
-      if (storyBible.trim()) {
-        parsedBible = JSON.parse(storyBible);
-      }
       await updateProject(currentProject.id, {
         name: name.trim(),
         status,
         episode_count: episodeCount ? Number(episodeCount) : undefined,
-        story_bible: parsedBible,
       });
       await refreshProjects();
       setToast({ message: 'Project saved', type: 'success' });
@@ -77,6 +80,42 @@ export default function ProjectDetail() {
       setToast({ message: msg, type: 'error' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleGenerateMore = async () => {
+    setGenerating(true);
+    try {
+      const newConcepts = await generateMoreConcepts(currentProject.id);
+      const merged = [...concepts, ...newConcepts];
+      setConcepts(merged);
+      // Persist the updated concepts into story_bible
+      const bible = (currentProject.story_bible as Record<string, unknown> | null) ?? {};
+      await updateProject(currentProject.id, {
+        story_bible: { ...bible, base_video_concepts: merged },
+      });
+      await refreshProjects();
+    } catch {
+      setToast({ message: 'Could not generate ideas. Check Ollama is running.', type: 'error' });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleCreateEpisode = async (concept: VideoConceptSuggestion, idx: number) => {
+    setCreatingFrom(idx);
+    try {
+      await createTask(currentProject.id, concept.title);
+      // Reload episodes
+      if (currentWorkspace) {
+        const all = await fetchTasksForWorkspace(currentWorkspace.id);
+        setEpisodes(all.filter((t) => t.project_id === currentProject.id));
+      }
+      setToast({ message: `Episode "${concept.title}" created`, type: 'success' });
+    } catch {
+      setToast({ message: 'Failed to create episode', type: 'error' });
+    } finally {
+      setCreatingFrom(null);
     }
   };
 
@@ -107,17 +146,54 @@ export default function ProjectDetail() {
               onChange={(e) => setEpisodeCount(e.target.value)} placeholder="—" />
           </label>
 
-          <label className={styles.label}>
-            Story bible (JSON)
-            <textarea className={styles.textarea} value={storyBible}
-              onChange={(e) => setStoryBible(e.target.value)} rows={6}
-              placeholder='{"characters": {}, "plot_threads": [], "timeline": []}' />
-          </label>
-
           <button type="submit" className={styles.saveBtn} disabled={saving}>
             {saving ? 'Saving…' : 'Save changes'}
           </button>
         </form>
+      </section>
+
+      {/* ── Episode Ideas ── */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Episode ideas</h2>
+          <button
+            type="button"
+            className={styles.generateBtn}
+            onClick={handleGenerateMore}
+            disabled={generating}
+          >
+            {generating ? 'Generating…' : '✦ Generate more ideas'}
+          </button>
+        </div>
+
+        {seriesConcept && (
+          <p className={styles.seriesConcept}>{seriesConcept}</p>
+        )}
+
+        {concepts.length === 0 ? (
+          <p className={styles.empty}>
+            No episode ideas yet. Use the AI brief when creating a project, or click "Generate more ideas".
+          </p>
+        ) : (
+          <div className={styles.conceptGrid}>
+            {concepts.map((c, i) => (
+              <div key={i} className={styles.conceptCard}>
+                <div className={styles.conceptCardBody}>
+                  <span className={styles.conceptTitle}>{c.title}</span>
+                  <span className={styles.conceptDesc}>{c.concept}</span>
+                </div>
+                <button
+                  type="button"
+                  className={styles.createEpBtn}
+                  onClick={() => handleCreateEpisode(c, i)}
+                  disabled={creatingFrom === i}
+                >
+                  {creatingFrom === i ? 'Creating…' : '→ Create Episode'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className={styles.section}>
@@ -125,7 +201,7 @@ export default function ProjectDetail() {
         {epLoading ? (
           <p className={styles.empty}>Loading…</p>
         ) : episodes.length === 0 ? (
-          <p className={styles.empty}>No episodes yet. Create tasks from the Tasks board.</p>
+          <p className={styles.empty}>No episodes yet. Create one from an idea above.</p>
         ) : (
           <table className={styles.table}>
             <thead>
