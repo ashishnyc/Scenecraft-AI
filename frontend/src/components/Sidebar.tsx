@@ -9,10 +9,9 @@ import styles from './Sidebar.module.css';
 
 // Series pipeline nav (only when a series is selected)
 const SERIES_NAV = [
-  { to: '/tasks',        label: 'Videos',        icon: '▤' },
-  { to: '/scripts',      label: 'Script Review', icon: '✎' },
-  { to: '/video-review', label: 'Video Review',  icon: '▶' },
-  { to: '/publish',      label: 'Publish',       icon: '↑' },
+  { to: '/dashboard', label: 'Dashboard', icon: '▦' },
+  { to: '/table',     label: 'Table',     icon: '▤' },
+  { to: '/tasks',     label: 'Kanban',    icon: '⬛' },
 ];
 
 function initials(name: string) {
