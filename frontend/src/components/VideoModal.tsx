@@ -81,96 +81,107 @@ function IdeaTab({ task, onUpdated }: IdeaTabProps) {
     }
   };
 
+  const handleDeleteVersion = async (indexInReversed: number) => {
+    const reversed = [...history].reverse();
+    reversed.splice(indexInReversed, 1);
+    const newHistory = [...reversed].reverse();
+    const updated = await updateTask(task.id, { brief_history: newHistory });
+    onUpdated(updated);
+    setHistory(updated.brief_history ?? []);
+  };
+
   const versions = [...history].reverse();
 
   return (
     <div className={styles.tabContent}>
-      {/* ── Current brief ── */}
-      <div className={styles.briefCard}>
-        <div className={styles.briefCardHeader}>
-          <span className={styles.sectionLabel}>Video Brief</span>
-          {!editing && (
-            <button className={styles.briefEdit} onClick={handleEdit}>Edit</button>
-          )}
-        </div>
-
-        {editing ? (
-          <>
-            <div className={styles.briefEditActions}>
-              <button className={styles.briefAiBtn} onClick={handleGenerateBrief} disabled={generating}>
-                {generating ? 'Writing…' : '✦ Write with AI'}
-              </button>
+      {/* ── Current brief — styled same as history items ── */}
+      <div className={styles.historyTimeline}>
+        <div className={styles.historyItem}>
+          <div className={`${styles.historyDot} ${styles.historyDotCurrent}`} />
+          <div className={styles.historyLine} />
+          <div className={styles.historyBody}>
+            <div className={styles.historyMeta}>
+              <span className={styles.sectionLabel}>Current Brief</span>
+              {!editing && (
+                <button className={styles.briefEdit} onClick={handleEdit}>Edit</button>
+              )}
             </div>
-            <textarea
-              className={styles.briefTextarea}
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              rows={5}
-              autoFocus
-            />
-            <div className={styles.briefActions}>
-              <button className={styles.briefSave} onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving…' : 'Save'}
-              </button>
-              <button className={styles.briefCancel} onClick={handleCancel}>Cancel</button>
-            </div>
-          </>
-        ) : (
-          <p className={styles.briefText}>
-            {task.concept_brief
-              ? task.concept_brief
-              : <span className={styles.briefMissing}>No brief yet — click Edit to add one</span>
-            }
-          </p>
-        )}
-      </div>
 
-      {/* ── Originality ── */}
-      {checkingOriginality && <div className={styles.originalityChecking}>Checking originality…</div>}
-      {originality && !checkingOriginality && (
-        <div className={`${styles.originalityResult} ${originality.low_originality ? styles.originalityLow : styles.originalityHigh}`}>
-          <div className={styles.originalityHeader}>
-            <span className={styles.originalityTitle}>
-              {originality.low_originality ? '⚠ Similar content exists' : '✓ Looks original'}
-            </span>
-            <span className={styles.originalityScore}>{Math.round(originality.originality_score * 100)}% original</span>
-          </div>
-          {originality.similar_videos.length > 0 && (
-            <div className={styles.similarVideos}>
-              {originality.similar_videos.slice(0, 3).map((v) => (
-                <div key={v.video_id} className={styles.similarVideo}>
-                  <span className={styles.similarVideoTitle}>{v.title}</span>
-                  <span className={styles.similarVideoScore}>{Math.round(v.score * 100)}% match</span>
+            {editing ? (
+              <>
+                <div className={styles.briefEditActions}>
+                  <button className={styles.briefAiBtn} onClick={handleGenerateBrief} disabled={generating}>
+                    {generating ? 'Writing…' : '✦ Write with AI'}
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                <textarea
+                  className={styles.briefTextarea}
+                  value={draft}
+                  onChange={e => setDraft(e.target.value)}
+                  rows={5}
+                  autoFocus
+                />
+                <div className={styles.briefActions}>
+                  <button className={styles.briefSave} onClick={handleSave} disabled={saving}>
+                    {saving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button className={styles.briefCancel} onClick={handleCancel}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              <p className={styles.briefText}>
+                {task.concept_brief
+                  ? task.concept_brief
+                  : <span className={styles.briefMissing}>No brief yet — click Edit to add one</span>
+                }
+              </p>
+            )}
 
-      {/* ── Version history timeline ── */}
-      {versions.length > 0 && (
-        <div className={styles.historySection}>
-          <div className={styles.sectionLabel}>Version History</div>
-          <div className={styles.historyTimeline}>
-            {versions.map((v, i) => (
-              <div key={i} className={styles.historyItem}>
-                <div className={styles.historyDot} />
-                <div className={styles.historyLine} />
-                <div className={styles.historyBody}>
-                  <div className={styles.historyMeta}>
-                    <span className={`${styles.historySource} ${v.source === 'ai' ? styles.historySourceAi : ''}`}>
-                      {v.source === 'ai' ? '✦ AI' : 'Manual'}
-                    </span>
-                    <span className={styles.historyDate}>{formatDate(v.created_at)}</span>
+            {/* Originality */}
+            {checkingOriginality && <div className={styles.originalityChecking}>Checking originality…</div>}
+            {originality && !checkingOriginality && (
+              <div className={`${styles.originalityResult} ${originality.low_originality ? styles.originalityLow : styles.originalityHigh}`}>
+                <div className={styles.originalityHeader}>
+                  <span className={styles.originalityTitle}>
+                    {originality.low_originality ? '⚠ Similar content exists' : '✓ Looks original'}
+                  </span>
+                  <span className={styles.originalityScore}>{Math.round(originality.originality_score * 100)}% original</span>
+                </div>
+                {originality.similar_videos.length > 0 && (
+                  <div className={styles.similarVideos}>
+                    {originality.similar_videos.slice(0, 3).map((v) => (
+                      <div key={v.video_id} className={styles.similarVideo}>
+                        <span className={styles.similarVideoTitle}>{v.title}</span>
+                        <span className={styles.similarVideoScore}>{Math.round(v.score * 100)}% match</span>
+                      </div>
+                    ))}
                   </div>
-                  <p className={styles.historyContent}>{v.content}</p>
-                </div>
+                )}
               </div>
-            ))}
+            )}
           </div>
         </div>
-      )}
+
+        {/* ── Version history ── */}
+        {versions.map((v, i) => (
+          <div key={i} className={styles.historyItem}>
+            <div className={styles.historyDot} />
+            {i < versions.length - 1 && <div className={styles.historyLine} />}
+            <div className={styles.historyBody}>
+              <div className={styles.historyMeta}>
+                <span className={`${styles.historySource} ${v.source === 'ai' ? styles.historySourceAi : ''}`}>
+                  {v.source === 'ai' ? '✦ AI' : 'Manual'}
+                </span>
+                <span className={styles.historyDate}>{formatDate(v.created_at)}</span>
+                <button className={styles.historyDeleteBtn} onClick={() => handleDeleteVersion(i)} title="Delete this version">
+                  🗑
+                </button>
+              </div>
+              <p className={styles.historyContent}>{v.content}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

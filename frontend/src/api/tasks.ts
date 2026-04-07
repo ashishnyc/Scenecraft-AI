@@ -94,7 +94,7 @@ export async function deleteTask(taskId: string): Promise<void> {
 
 export async function updateTask(
   taskId: string,
-  body: { title?: string; concept_brief?: string; creator_notes?: string; _source?: 'manual' | 'ai' },
+  body: { title?: string; concept_brief?: string; creator_notes?: string; brief_history?: BriefVersion[]; _source?: 'manual' | 'ai' },
 ): Promise<Task> {
   const res = await apiClient.put<Task>(`/tasks/${taskId}`, body);
   return res.data;
