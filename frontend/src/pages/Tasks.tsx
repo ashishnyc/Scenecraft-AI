@@ -9,8 +9,6 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { useProject } from '../context/ProjectContext';
 import type { Task, TaskStatus } from '../api/tasks';
 import { TASK_STATUSES, STATUS_LABELS, fetchTasksForWorkspace, transitionTask } from '../api/tasks';
-import type { Pitch } from '../api/pitches';
-import { fetchPitches, approvePitch, rejectPitch } from '../api/pitches';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { Toast } from '../components/Toast';
 import { VideoModal } from '../components/VideoModal';
@@ -30,12 +28,18 @@ const NEXT_ACTION: Record<TaskStatus, string> = {
   published:     'Live on YouTube',
 };
 
-// ── Phase groups (SA-99) ──────────────────────────────────────────────────────
+// ── Phase groups ──────────────────────────────────────────────────────────────
 const PHASES = [
   { label: 'Writing',    statuses: ['idea', 'approved', 'scripting'] as TaskStatus[] },
   { label: 'Review',     statuses: ['audio_preview', 'script_review', 'final_review'] as TaskStatus[] },
   { label: 'Production', statuses: ['producing', 'scheduled', 'published'] as TaskStatus[] },
 ];
+
+// Map each status back to its phase
+const PHASE_FOR_STATUS: Record<TaskStatus, typeof PHASES[number]> = {} as Record<TaskStatus, typeof PHASES[number]>;
+for (const phase of PHASES) {
+  for (const s of phase.statuses) PHASE_FOR_STATUS[s] = phase;
+}
 
 // Statuses that indicate active background processing
 const ACTIVE_STATUSES = new Set<TaskStatus>(['scripting', 'audio_preview', 'producing']);
@@ -50,23 +54,46 @@ interface TaskCardProps {
 function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
   const isActive = ACTIVE_STATUSES.has(task.status);
   const hasBrief = !!task.concept_brief;
+  const phase = PHASE_FOR_STATUS[task.status];
+  const currentIdx = phase.statuses.indexOf(task.status);
+
   return (
     <div
       className={`${styles.card} ${isDragging ? styles.cardDragging : ''}`}
       onClick={onClick}
     >
-      <div className={styles.cardHeader}>
-        <p className={styles.cardTitle}>{task.title}</p>
-        {isActive && <span className={styles.activeDot} title="Processing…" />}
-      </div>
-      <p className={styles.nextAction}>{NEXT_ACTION[task.status]}</p>
-      <div className={styles.cardFooter}>
-        <span className={`${styles.badge} ${styles[`badge_${task.status}`]}`}>
-          {STATUS_LABELS[task.status]}
-        </span>
-        {!hasBrief && task.status === 'idea' && (
-          <span className={styles.noBriefHint}>needs brief</span>
-        )}
+      <div className={styles.cardBody}>
+        <div className={styles.cardLeft}>
+          <div className={styles.cardHeader}>
+            <p className={styles.cardTitle}>{task.title}</p>
+            {isActive && <span className={styles.activeDot} title="Processing…" />}
+          </div>
+          {!hasBrief && task.status === 'idea' && (
+            <span className={styles.noBriefHint}>needs brief</span>
+          )}
+        </div>
+
+        {/* Mini vertical pipeline timeline — right side */}
+        <div className={styles.cardTimeline}>
+          {phase.statuses.map((s, idx) => {
+            const done    = idx < currentIdx;
+            const current = idx === currentIdx;
+            const isLast  = idx === phase.statuses.length - 1;
+            return (
+              <div key={s} className={styles.cardTimelineRow}>
+                <div className={styles.cardTimelineLeft}>
+                  <div className={`${styles.cardTlDot} ${done ? styles.cardTlDotDone : current ? styles.cardTlDotCurrent : ''}`}>
+                    {done && <span className={styles.cardTlCheck}>✓</span>}
+                  </div>
+                  {!isLast && <div className={styles.cardTlLine} />}
+                </div>
+                <span className={`${styles.cardTlLabel} ${done ? styles.cardTlLabelDone : current ? styles.cardTlLabelCurrent : ''}`}>
+                  {STATUS_LABELS[s]}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -81,39 +108,29 @@ function DraggableCard({ task, onOpen }: { task: Task; onOpen: (t: Task) => void
   );
 }
 
-function DroppableColumn({
-  status, tasks, onOpen,
-}: { status: TaskStatus; tasks: Task[]; onOpen: (t: Task) => void }) {
-  const { setNodeRef, isOver } = useDroppable({ id: status });
+// ── Flat phase column (single droppable, no inner timeline) ──────────────────
+function PhaseColumn({
+  phase,
+  tasksByStatus,
+  onOpen,
+}: {
+  phase: { label: string; statuses: TaskStatus[] };
+  tasksByStatus: Record<TaskStatus, Task[]>;
+  onOpen: (t: Task) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: phase.label });
+  const tasks = phase.statuses.flatMap((s) => tasksByStatus[s]);
   return (
-    <div className={`${styles.column} ${isOver ? styles.columnOver : ''}`} ref={setNodeRef}>
-      <div className={styles.columnHeader}>
-        <span className={styles.columnTitle}>{STATUS_LABELS[status]}</span>
-        <span className={styles.columnCount}>{tasks.length}</span>
+    <div className={`${styles.phaseCol} ${isOver ? styles.phaseColOver : ''}`}>
+      <div className={styles.phaseColHeader}>
+        <span className={styles.phaseColLabel}>{phase.label}</span>
+        {tasks.length > 0 && <span className={styles.phaseColCount}>{tasks.length}</span>}
       </div>
-      <div className={styles.columnBody}>
-        {tasks.map((task) => <DraggableCard key={task.id} task={task} onOpen={onOpen} />)}
-      </div>
-    </div>
-  );
-}
-
-// ── AI Ideas column (SA-97) ───────────────────────────────────────────────────
-function PitchCard({
-  pitch,
-  onApprove,
-  onReject,
-}: { pitch: Pitch; onApprove: (p: Pitch) => void; onReject: (p: Pitch) => void }) {
-  return (
-    <div className={styles.pitchCard}>
-      <p className={styles.cardTitle}>{pitch.title}</p>
-      <p className={styles.pitchSummary}>{pitch.concept_summary}</p>
-      {pitch.appeal_score != null && (
-        <span className={styles.appealBadge}>Appeal {pitch.appeal_score}/10</span>
-      )}
-      <div className={styles.pitchActions}>
-        <button className={styles.pitchApproveBtn} onClick={() => onApprove(pitch)}>→ Add to board</button>
-        <button className={styles.pitchRejectBtn} onClick={() => onReject(pitch)}>✕</button>
+      <div className={styles.phaseColBody} ref={setNodeRef}>
+        {tasks.length === 0
+          ? <p className={styles.phaseColEmpty}>Drop cards here</p>
+          : tasks.map((task) => <DraggableCard key={task.id} task={task} onOpen={onOpen} />)
+        }
       </div>
     </div>
   );
@@ -124,7 +141,6 @@ export default function Tasks() {
   const { currentWorkspace } = useWorkspace();
   const { currentProject, projects } = useProject();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [pitches, setPitches] = useState<Pitch[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [modalTask, setModalTask] = useState<Task | null>(null);
@@ -137,12 +153,8 @@ export default function Tasks() {
     if (!currentWorkspace) return;
     setLoading(true);
     try {
-      const [taskData, pitchData] = await Promise.all([
-        fetchTasksForWorkspace(currentWorkspace.id),
-        fetchPitches(currentWorkspace.id, 'pending').catch(() => [] as Pitch[]),
-      ]);
+      const taskData = await fetchTasksForWorkspace(currentWorkspace.id);
       setTasks(taskData);
-      setPitches(pitchData);
     } finally {
       setLoading(false);
     }
@@ -176,9 +188,14 @@ export default function Tasks() {
   const handleDragEnd = async ({ active, over }: DragEndEvent) => {
     setActiveTask(null);
     if (!over) return;
-    const targetStatus = over.id as TaskStatus;
     const task = tasks.find((t) => t.id === active.id);
-    if (!task || task.status === targetStatus) return;
+    if (!task) return;
+    // Resolve phase label → first status of that phase
+    const targetPhase = PHASES.find((p) => p.label === over.id);
+    if (!targetPhase) return;
+    // Already in this phase — no-op
+    if (targetPhase.statuses.includes(task.status)) return;
+    const targetStatus = targetPhase.statuses[0];
 
     setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: targetStatus } : t));
 
@@ -195,27 +212,6 @@ export default function Tasks() {
   const handleTaskUpdated = (updated: Task) => {
     setTasks((prev) => prev.map((t) => t.id === updated.id ? updated : t));
     setModalTask(updated);
-  };
-
-  const handleApprovePitch = async (pitch: Pitch) => {
-    if (!currentWorkspace) return;
-    try {
-      const task = await approvePitch(currentWorkspace.id, pitch.id, currentProject?.id);
-      setPitches((prev) => prev.filter((p) => p.id !== pitch.id));
-      setTasks((prev) => [...prev, task]);
-    } catch {
-      setToast('Failed to approve pitch');
-    }
-  };
-
-  const handleRejectPitch = async (pitch: Pitch) => {
-    if (!currentWorkspace) return;
-    try {
-      await rejectPitch(currentWorkspace.id, pitch.id);
-      setPitches((prev) => prev.filter((p) => p.id !== pitch.id));
-    } catch {
-      setToast('Failed to reject pitch');
-    }
   };
 
   if (!currentWorkspace) {
@@ -237,51 +233,14 @@ export default function Tasks() {
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className={styles.board}>
 
-            {/* AI Ideas column (SA-97) */}
-            <div className={styles.phaseGroup}>
-              <div className={styles.phaseHeader}>
-                <span className={styles.phaseLabel}>AI Ideas</span>
-                <span className={styles.phaseCount}>{pitches.length}</span>
-              </div>
-              <div className={styles.phaseColumns}>
-                <div className={styles.column}>
-                  <div className={styles.columnHeader}>
-                    <span className={styles.columnTitle}>Suggestions</span>
-                    <span className={styles.columnCount}>{pitches.length}</span>
-                  </div>
-                  <div className={styles.columnBody}>
-                    {pitches.length === 0 ? (
-                      <p className={styles.pitchEmpty}>No AI ideas pending</p>
-                    ) : (
-                      pitches.map((p) => (
-                        <PitchCard
-                          key={p.id}
-                          pitch={p}
-                          onApprove={handleApprovePitch}
-                          onReject={handleRejectPitch}
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Phase groups (SA-99) */}
+            {/* Phase columns: Writing, Review, Production */}
             {PHASES.map((phase) => (
-              <div key={phase.label} className={styles.phaseGroup}>
-                <div className={styles.phaseHeader}>
-                  <span className={styles.phaseLabel}>{phase.label}</span>
-                  <span className={styles.phaseCount}>
-                    {phase.statuses.reduce((n, s) => n + tasksByStatus[s].length, 0)}
-                  </span>
-                </div>
-                <div className={styles.phaseColumns}>
-                  {phase.statuses.map((status) => (
-                    <DroppableColumn key={status} status={status} tasks={tasksByStatus[status]} onOpen={setModalTask} />
-                  ))}
-                </div>
-              </div>
+              <PhaseColumn
+                key={phase.label}
+                phase={phase}
+                tasksByStatus={tasksByStatus}
+                onOpen={setModalTask}
+              />
             ))}
           </div>
 
