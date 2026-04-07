@@ -49,13 +49,15 @@ interface TaskCardProps {
   task: Task;
   isDragging?: boolean;
   onClick?: () => void;
+  onAdvance?: (task: Task) => void;
 }
 
-function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
+function TaskCard({ task, isDragging, onClick, onAdvance }: TaskCardProps) {
   const isActive = ACTIVE_STATUSES.has(task.status);
   const hasBrief = !!task.concept_brief;
   const phase = PHASE_FOR_STATUS[task.status];
   const currentIdx = phase.statuses.indexOf(task.status);
+  const nextStatus = TASK_STATUSES[TASK_STATUSES.indexOf(task.status) + 1] as TaskStatus | undefined;
 
   return (
     <div
@@ -70,6 +72,15 @@ function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
           </div>
           {!hasBrief && task.status === 'idea' && (
             <span className={styles.noBriefHint}>needs brief</span>
+          )}
+          {nextStatus && onAdvance && (
+            <button
+              className={styles.advanceBtn}
+              onClick={(e) => { e.stopPropagation(); onAdvance(task); }}
+              title={`Move to ${STATUS_LABELS[nextStatus]}`}
+            >
+              → {STATUS_LABELS[nextStatus]}
+            </button>
           )}
         </div>
 
@@ -99,11 +110,11 @@ function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
   );
 }
 
-function DraggableCard({ task, onOpen }: { task: Task; onOpen: (t: Task) => void }) {
+function DraggableCard({ task, onOpen, onAdvance }: { task: Task; onOpen: (t: Task) => void; onAdvance: (t: Task) => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   return (
     <div ref={setNodeRef} {...listeners} {...attributes} style={{ opacity: isDragging ? 0.4 : 1 }}>
-      <TaskCard task={task} onClick={() => onOpen(task)} />
+      <TaskCard task={task} onClick={() => onOpen(task)} onAdvance={onAdvance} />
     </div>
   );
 }
@@ -113,10 +124,12 @@ function PhaseColumn({
   phase,
   tasksByStatus,
   onOpen,
+  onAdvance,
 }: {
   phase: { label: string; statuses: TaskStatus[] };
   tasksByStatus: Record<TaskStatus, Task[]>;
   onOpen: (t: Task) => void;
+  onAdvance: (t: Task) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: phase.label });
   const tasks = phase.statuses.flatMap((s) => tasksByStatus[s]);
@@ -129,7 +142,7 @@ function PhaseColumn({
       <div className={styles.phaseColBody} ref={setNodeRef}>
         {tasks.length === 0
           ? <p className={styles.phaseColEmpty}>Drop cards here</p>
-          : tasks.map((task) => <DraggableCard key={task.id} task={task} onOpen={onOpen} />)
+          : tasks.map((task) => <DraggableCard key={task.id} task={task} onOpen={onOpen} onAdvance={onAdvance} />)
         }
       </div>
     </div>
@@ -214,6 +227,21 @@ export default function Tasks() {
     setModalTask(updated);
   };
 
+  const handleAdvanceTask = async (task: Task) => {
+    const idx = TASK_STATUSES.indexOf(task.status);
+    if (idx === -1 || idx >= TASK_STATUSES.length - 1) return;
+    const nextStatus = TASK_STATUSES[idx + 1];
+    setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: nextStatus } : t));
+    try {
+      const updated = await transitionTask(task.id, nextStatus);
+      setTasks((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    } catch (err: unknown) {
+      setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: task.status } : t));
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Invalid transition';
+      setToast(msg);
+    }
+  };
+
   if (!currentWorkspace) {
     return <main className={styles.container}><p className={styles.empty}>Select a workspace first.</p></main>;
   }
@@ -240,6 +268,7 @@ export default function Tasks() {
                 phase={phase}
                 tasksByStatus={tasksByStatus}
                 onOpen={setModalTask}
+                onAdvance={handleAdvanceTask}
               />
             ))}
           </div>

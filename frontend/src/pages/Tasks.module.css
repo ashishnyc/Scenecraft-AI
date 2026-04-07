@@ -247,6 +247,27 @@
   letter-spacing: 0.05em;
 }
 
+.advanceBtn {
+  display: inline-block;
+  margin-top: var(--space-2);
+  padding: 2px var(--space-2);
+  font-size: 0.65rem;
+  font-weight: var(--font-semibold);
+  font-family: inherit;
+  color: var(--color-accent-primary);
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-accent-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.advanceBtn:hover {
+  background: var(--color-accent-primary);
+  color: #fff;
+}
+
 .empty {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
