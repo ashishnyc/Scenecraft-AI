@@ -81,6 +81,10 @@ export async function createTask(projectId: string, title: string, conceptBrief?
   return res.data;
 }
 
+export async function deleteTask(taskId: string): Promise<void> {
+  await apiClient.delete(`/tasks/${taskId}`);
+}
+
 export async function updateTask(taskId: string, body: { title?: string; concept_brief?: string; creator_notes?: string }): Promise<Task> {
   const res = await apiClient.put<Task>(`/tasks/${taskId}`, body);
   return res.data;

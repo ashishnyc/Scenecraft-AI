@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Task, TaskStatus, OriginalityResult } from '../api/tasks';
-import { STATUS_LABELS, updateTask, generateBrief, checkOriginality } from '../api/tasks';
+import { STATUS_LABELS, updateTask, deleteTask, generateBrief, checkOriginality } from '../api/tasks';
 import styles from './VideoModal.module.css';
 
 // ── Stage tabs ────────────────────────────────────────────────────────────────
@@ -235,15 +235,31 @@ interface Props {
   task: Task;
   onClose: () => void;
   onUpdated: (task: Task) => void;
+  onDeleted?: (taskId: string) => void;
 }
 
-export function VideoModal({ task, onClose, onUpdated }: Props) {
+export function VideoModal({ task, onClose, onUpdated, onDeleted }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>(() => tabForStatus(task.status));
 
   // Title editing
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
   const [savingTitle, setSavingTitle] = useState(false);
+
+  // Delete
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteTask(task.id);
+      onDeleted?.(task.id);
+      onClose();
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Close on Escape
   useEffect(() => {
@@ -295,7 +311,22 @@ export function VideoModal({ task, onClose, onUpdated }: Props) {
               </h2>
             )}
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
+          <div className={styles.headerRight}>
+            {confirmDelete ? (
+              <div className={styles.deleteConfirm}>
+                <span className={styles.deleteConfirmText}>Delete this video?</span>
+                <button className={styles.deleteConfirmYes} onClick={handleDelete} disabled={deleting}>
+                  {deleting ? 'Deleting…' : 'Yes, delete'}
+                </button>
+                <button className={styles.deleteConfirmNo} onClick={() => setConfirmDelete(false)}>Cancel</button>
+              </div>
+            ) : (
+              <button className={styles.deleteBtn} onClick={() => setConfirmDelete(true)} title="Delete video">
+                🗑
+              </button>
+            )}
+            <button className={styles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
+          </div>
         </div>
 
         {/* ── Stage tabs ── */}
