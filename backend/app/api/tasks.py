@@ -117,15 +117,23 @@ async def generate_brief(
     if series_concept:
         series_ctx += f"\nSeries concept: {series_concept}"
 
-    brief_text = await llm_chat(
-        system=(
-            "You are a YouTube content strategist. Generate a compelling video concept brief "
-            "in 2-3 sentences. Describe what the video will cover, the key story angle, and "
-            "why viewers will find it compelling. Be specific and vivid. Return only the brief text."
+    import asyncio, functools
+    brief_text = await asyncio.get_event_loop().run_in_executor(
+        None,
+        functools.partial(
+            llm_chat,
+            system=(
+                "You are a YouTube content strategist. Generate a compelling video concept brief "
+                "in 2-3 sentences. Describe what the video will cover, the key story angle, and "
+                "why viewers will find it compelling. Be specific and vivid. Return only the brief text."
+            ),
+            user=f"{series_ctx}\nVideo title: {task.title}".strip(),
+            config=cfg,
         ),
-        user=f"{series_ctx}\nVideo title: {task.title}".strip(),
-        config=cfg,
     )
+
+    if not brief_text:
+        raise HTTPException(status_code=500, detail="AI failed to generate a brief")
 
     return GenerateBriefResponse(concept_brief=brief_text.strip())
 
