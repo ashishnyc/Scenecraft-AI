@@ -48,13 +48,13 @@
   text-transform: uppercase;
 }
 
-/* ── Workspace switcher ────────────────────────────────── */
-.workspaceSwitcher {
+/* ── Series switcher ───────────────────────────────────── */
+.seriesSwitcher {
   padding: 0 var(--space-4);
   margin-bottom: var(--space-5);
 }
 
-.workspaceLabelRow {
+.switcherLabelRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -62,7 +62,7 @@
   margin-bottom: var(--space-2);
 }
 
-.workspaceLabel {
+.switcherLabel {
   font-size: 0.65rem;
   color: var(--color-text-muted);
   text-transform: uppercase;
@@ -70,7 +70,7 @@
   font-weight: var(--font-semibold);
 }
 
-.workspaceButton {
+.switcherButton {
   width: 100%;
   text-align: left;
   background: var(--color-bg-tertiary);
@@ -81,16 +81,40 @@
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   transition: border-color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.workspaceButton:hover { border-color: var(--color-accent-primary); }
+.switcherButton:hover { border-color: var(--color-accent-primary); }
 
-.workspaceHandle {
-  display: block;
-  font-size: var(--text-xs);
+.switcherDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent-primary);
+  flex-shrink: 0;
+}
+
+.switcherName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.switcherPlaceholder {
   color: var(--color-text-muted);
   font-weight: var(--font-normal);
-  margin-top: 1px;
+}
+
+/* ── Nav divider between workspace + series nav ── */
+.navDivider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-2) var(--space-3);
 }
 
 /* ── Navigation ────────────────────────────────────────── */
@@ -292,7 +316,7 @@
 
 .logoutButton:hover { color: var(--color-error); }
 
-/* ── Workspace dropdown ────────────────────────────────── */
+/* ── Dropdown (series switcher) ────────────────────────── */
 .dropdownWrapper { position: relative; }
 
 .dropdown {
@@ -310,6 +334,9 @@
 }
 
 .dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
@@ -323,20 +350,25 @@
 
 .dropdownItemActive { color: var(--color-accent-primary); }
 
+.dropdownDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
 .dropdownDivider {
   border: none;
   border-top: 1px solid var(--color-border);
   margin: var(--space-1) 0;
 }
 
-.dropdownNewWorkspace {
+.dropdownNewItem {
   padding: var(--space-2) var(--space-3);
   font-size: var(--text-sm);
   color: var(--color-accent-primary);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
-.dropdownNewWorkspace:hover { background: var(--color-accent-subtle); }
+.dropdownNewItem:hover { background: var(--color-accent-subtle); }
