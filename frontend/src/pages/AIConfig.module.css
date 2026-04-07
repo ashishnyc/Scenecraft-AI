@@ -1,0 +1,197 @@
+/* ── AI Configuration section ─────────────────────────────────────────────── */
+.section {
+  margin-top: var(--space-10);
+}
+
+.sectionTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-1);
+}
+
+.sectionDesc {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-6);
+}
+
+.loading {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── Card ── */
+.card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cardTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.cardDesc {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: calc(-1 * var(--space-2));
+}
+
+/* ── Row / Field ── */
+.row {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.row > .field {
+  flex: 1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.input,
+.select {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+}
+
+/* ── Test connection ── */
+.testRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.testBtn {
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.testBtn:hover:not(:disabled) {
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+}
+
+.testBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.testOk {
+  font-size: var(--text-sm);
+  color: #4ade80;
+}
+
+.testErr {
+  font-size: var(--text-sm);
+  color: var(--color-error);
+}
+
+/* ── Per-feature overrides ── */
+.featureList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.featureItem {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.featureHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-tertiary);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.featureHeader:hover {
+  background: var(--color-bg-hover);
+}
+
+.featureLabel {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.featureBadge {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.featureDefault {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.featureChevron {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.featureBody {
+  padding: var(--space-4);
+  background: var(--color-bg-primary);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}

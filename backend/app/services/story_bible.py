@@ -119,9 +119,13 @@ async def extract_episode_events(
     full_script: dict,
     existing_bible: dict[str, Any] | None,
     episode_number: int,
+    db=None,
+    workspace_id=None,
 ) -> dict[str, Any] | None:
     """Call the LLM to extract story events from a completed episode script."""
-    from app.services.llm_client import llm_chat
+    from app.services.llm_client import llm_chat, resolve_ai_config
+
+    config = await resolve_ai_config(workspace_id, "story_bible", db) if db and workspace_id else None
 
     open_threads = [t for t in (existing_bible or {}).get("plot_threads", []) if t.get("status") == "open"]
     prompt = f"""\
@@ -136,7 +140,7 @@ Full script:
 Extract the story events now.
 """
 
-    raw = llm_chat(system=EXTRACT_SYSTEM, user=prompt, max_tokens=2048)
+    raw = llm_chat(system=EXTRACT_SYSTEM, user=prompt, max_tokens=2048, config=config)
     if raw is None:
         logger.warning("LLM unavailable — skipping story bible extraction for task %s", task_id)
         return None

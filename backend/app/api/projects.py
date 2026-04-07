@@ -33,15 +33,18 @@ class ProjectSuggestResponse(BaseModel):
 async def suggest_project(
     workspace_id: uuid.UUID,
     body: ProjectSuggestRequest,
+    db: AsyncSession = Depends(get_db),
     _user_id: str = Depends(get_current_user_id),
 ):
     """Use the LLM to suggest a project name and base video concepts from a free-text brief."""
     from app.services.project_suggester import suggest_project as _suggest
-    result = _suggest(body.brief)
+    from app.services.llm_client import resolve_ai_config
+    config = await resolve_ai_config(workspace_id, "project_suggestions", db)
+    result = _suggest(body.brief, config=config)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="LLM unavailable — check OLLAMA_BASE_URL and model configuration.",
+            detail="LLM unavailable — check AI configuration in workspace settings.",
         )
     return result
 
@@ -113,17 +116,20 @@ async def generate_concepts(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
     from app.services.project_suggester import generate_concepts as _gen
+    from app.services.llm_client import resolve_ai_config
+    config = await resolve_ai_config(project.workspace_id, "project_suggestions", db)
     brief = body.brief or project.name
     story_bible = project.story_bible or {}
     result = _gen(
         brief=brief,
         series_concept=story_bible.get("series_concept", ""),
         existing_concepts=story_bible.get("base_video_concepts", []),
+        config=config,
     )
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="LLM unavailable — check OLLAMA_BASE_URL and model configuration.",
+            detail="LLM unavailable — check AI configuration in workspace settings.",
         )
     return result
 

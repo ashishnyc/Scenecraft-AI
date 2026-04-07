@@ -16,6 +16,7 @@ class Workspace(Base):
     youtube_oauth_token: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    ai_config: Mapped["WorkspaceAIConfig | None"] = relationship("WorkspaceAIConfig", back_populates="workspace", uselist=False, cascade="all, delete-orphan")
     projects: Mapped[list["Project"]] = relationship("Project", back_populates="workspace", cascade="all, delete-orphan")
     competitor_videos: Mapped[list["CompetitorVideo"]] = relationship("CompetitorVideo", back_populates="workspace", cascade="all, delete-orphan")
     trending_topics: Mapped[list["TrendingTopic"]] = relationship("TrendingTopic", back_populates="workspace", cascade="all, delete-orphan")

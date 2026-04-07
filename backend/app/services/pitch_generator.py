@@ -97,13 +97,14 @@ async def generate_pitches(
     Call the LLM to generate `count` pitches and persist them.
     Falls back gracefully if OLLAMA_BASE_URL is not set.
     """
-    from app.services.llm_client import llm_chat
+    from app.services.llm_client import llm_chat, resolve_ai_config
 
+    config = await resolve_ai_config(workspace_id, "pitch_generation", db)
     user_prompt = _build_user_prompt(
         workspace_name, style_guide, trending_topics, competitor_top_videos, count
     )
 
-    raw_output = llm_chat(system=SYSTEM_PROMPT, user=user_prompt, max_tokens=2048)
+    raw_output = llm_chat(system=SYSTEM_PROMPT, user=user_prompt, max_tokens=2048, config=config)
     if raw_output is None:
         return []
 

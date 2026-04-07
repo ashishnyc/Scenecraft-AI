@@ -86,11 +86,11 @@ No markdown, no explanation outside the JSON.
 """
 
 
-async def _rewrite_scene(scene: dict) -> dict | None:
+async def _rewrite_scene(scene: dict, config=None) -> dict | None:
     """Ask the LLM to rewrite a flagged scene to improve originality."""
     from app.services.llm_client import llm_chat
     try:
-        raw = llm_chat(system=REWRITE_SYSTEM, user=json.dumps(scene, indent=2), max_tokens=2048)
+        raw = llm_chat(system=REWRITE_SYSTEM, user=json.dumps(scene, indent=2), max_tokens=2048, config=config)
         if raw is None:
             return None
         raw = raw.strip()
@@ -109,6 +109,7 @@ async def scan_copyright(
     task_id: str,
     full_script: dict,
     workspace_id: str,
+    db=None,
 ) -> tuple[dict[str, Any], dict[str, Any]] | None:
     """
     Scan *full_script* for copyright similarity.
@@ -146,13 +147,15 @@ async def scan_copyright(
             ))
 
     # Rewrite flagged scenes
+    from app.services.llm_client import resolve_ai_config
+    config = await resolve_ai_config(workspace_id, "copyright_scan", db) if db else None
     if flagged:
         logger.info("Rewriting %d copyright-flagged scene(s) for task %s", len(flagged), task_id)
         for flag in flagged:
             original_scene = scenes_by_num.get(flag.scene_number)
             if original_scene is None:
                 continue
-            rewritten = await _rewrite_scene(original_scene)
+            rewritten = await _rewrite_scene(original_scene, config=config)
             if rewritten:
                 scenes_by_num[flag.scene_number] = rewritten
 

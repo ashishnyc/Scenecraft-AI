@@ -32,18 +32,20 @@ def _parse_metadata(raw: str) -> dict[str, Any]:
     }
 
 
-async def generate_youtube_metadata(task_id: str) -> dict[str, Any] | None:
+async def generate_youtube_metadata(task_id: str, workspace_id=None) -> dict[str, Any] | None:
     """
     Generate YouTube title, description, and tags for the task.
 
     Returns ``{"title": ..., "description": ..., "tags": [...]}`` or None.
     """
-    from app.services.llm_client import llm_chat
+    from app.services.llm_client import llm_chat, resolve_ai_config
 
     async for db in get_db():
         row = (await db.execute(select(Task).where(Task.id == task_id))).scalar_one_or_none()
         if not row:
             return None
+
+        config = await resolve_ai_config(workspace_id, "metadata_generation", db) if workspace_id else None
 
         script = row.script or {}
         outline = script.get("outline", {})
@@ -70,7 +72,7 @@ Return a JSON object with exactly these keys:
 Return only the JSON object, no prose."""
 
     try:
-        raw = llm_chat(system="You are a YouTube content strategist. Return only JSON.", user=prompt, max_tokens=_MAX_TOKENS)
+        raw = llm_chat(system="You are a YouTube content strategist. Return only JSON.", user=prompt, max_tokens=_MAX_TOKENS, config=config)
         if raw is None:
             logger.warning("LLM unavailable — metadata generation skipped for task %s", task_id)
             return None

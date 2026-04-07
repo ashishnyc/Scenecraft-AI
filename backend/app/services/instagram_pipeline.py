@@ -41,11 +41,13 @@ async def generate_post_content(
     Returns:
         {"caption": str, "hashtags": list[str], "alt_text": str}
     """
-    from app.services.llm_client import llm_chat
+    from app.services.llm_client import llm_chat, resolve_ai_config
 
     character_context = ""
-    if character_id:
-        async for db in get_db():
+    config = None
+    async for db in get_db():
+        config = await resolve_ai_config(workspace_id, "instagram_content", db)
+        if character_id:
             from app.models.character import Character
             from sqlalchemy import select
             char = (await db.execute(
@@ -57,7 +59,7 @@ CHARACTER: {char.name} ({char.role_type.value})
 Personality: {char.personality_prompt or 'Not defined'}
 Backstory: {char.backstory or 'Not defined'}
 """
-            break
+        break
 
     prompt = f"""You are a social media content creator writing an Instagram post.
 {character_context}
@@ -74,7 +76,7 @@ Generate an engaging Instagram post. Return a JSON object with:
 Return only the JSON object."""
 
     try:
-        raw_result = llm_chat(system="You are a social media content creator. Return only JSON.", user=prompt, max_tokens=1024)
+        raw_result = llm_chat(system="You are a social media content creator. Return only JSON.", user=prompt, max_tokens=1024, config=config)
         if raw_result is None:
             raise ValueError("LLM unavailable")
         raw = raw_result.strip()
