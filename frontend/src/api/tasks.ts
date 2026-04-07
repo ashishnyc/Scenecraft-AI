@@ -49,7 +49,15 @@ export async function transitionTask(taskId: string, status: TaskStatus): Promis
   return res.data;
 }
 
-export async function createTask(projectId: string, title: string): Promise<Task> {
-  const res = await apiClient.post<Task>(`/projects/${projectId}/tasks`, { title });
+export async function createTask(projectId: string, title: string, conceptBrief?: string): Promise<Task> {
+  const res = await apiClient.post<Task>(`/projects/${projectId}/tasks`, {
+    title,
+    concept_brief: conceptBrief ?? null,
+  });
+  return res.data;
+}
+
+export async function updateTask(taskId: string, body: { concept_brief?: string; creator_notes?: string }): Promise<Task> {
+  const res = await apiClient.put<Task>(`/tasks/${taskId}`, body);
   return res.data;
 }
