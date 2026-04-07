@@ -83,6 +83,93 @@ async def update_task(
     return task
 
 
+# ── Generate brief with AI ────────────────────────────────────────────────────
+
+from pydantic import BaseModel as _PydanticBase
+
+
+class GenerateBriefResponse(_PydanticBase):
+    concept_brief: str
+
+
+@router.post("/tasks/{task_id}/generate-brief", response_model=GenerateBriefResponse)
+async def generate_brief(
+    task_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Use AI to generate a concept brief from the task title and series context."""
+    from app.services.llm_client import llm_chat, resolve_ai_config
+
+    task = await db.get(Task, task_id)
+    if task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    project = await db.get(Project, task.project_id)
+    series_concept = ""
+    if project and project.story_bible:
+        series_concept = (project.story_bible or {}).get("series_concept", "")
+
+    workspace_id = str(project.workspace_id) if project else None
+    cfg = await resolve_ai_config(workspace_id, "pitch_generation", db) if workspace_id else None
+
+    series_ctx = f"\nSeries: {project.name}" if project else ""
+    if series_concept:
+        series_ctx += f"\nSeries concept: {series_concept}"
+
+    import asyncio, functools
+    brief_text = await asyncio.get_event_loop().run_in_executor(
+        None,
+        functools.partial(
+            llm_chat,
+            system=(
+                "You are a YouTube content strategist. Generate a compelling video concept brief "
+                "in 2-3 sentences. Describe what the video will cover, the key story angle, and "
+                "why viewers will find it compelling. Be specific and vivid. Return only the brief text."
+            ),
+            user=f"{series_ctx}\nVideo title: {task.title}".strip(),
+            config=cfg,
+        ),
+    )
+
+    if not brief_text:
+        raise HTTPException(status_code=500, detail="AI failed to generate a brief")
+
+    return GenerateBriefResponse(concept_brief=brief_text.strip())
+
+
+# ── Originality check ─────────────────────────────────────────────────────────
+
+class OriginalityResponse(_PydanticBase):
+    originality_score: float
+    max_similarity: float
+    low_originality: bool
+    similar_videos: list[dict]
+
+
+@router.post("/tasks/{task_id}/check-originality", response_model=OriginalityResponse)
+async def check_originality(
+    task_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Check whether the task's concept brief is original vs existing workspace videos."""
+    from app.services.originality_checker import check_pitch_originality
+
+    task = await db.get(Task, task_id)
+    if task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    project = await db.get(Project, task.project_id)
+    workspace_id = str(project.workspace_id) if project else None
+    if not workspace_id:
+        raise HTTPException(status_code=400, detail="Task has no workspace")
+
+    brief = task.concept_brief or task.title
+    result = await check_pitch_originality(brief, workspace_id)
+    return result
+
+
 async def _run_outline_for_task(task_id: uuid.UUID) -> None:
     """Background job: stages 1-4 of the script pipeline.
 
