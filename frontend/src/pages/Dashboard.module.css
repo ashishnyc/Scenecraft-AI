@@ -1,0 +1,232 @@
+.container {
+  padding: var(--space-6) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.empty {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ── Channel header ── */
+.channelHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.channelAvatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-accent-subtle);
+  border: 2px solid var(--color-accent-primary);
+  color: var(--color-accent-primary);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.channelMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.channelName {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.channelHandle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* ── Stats row ── */
+.statsRow {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.statCard {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 90px;
+}
+
+.statValue {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.statLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Section ── */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+
+/* ── Series grid ── */
+.seriesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.seriesCard {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.seriesCard:hover {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* One-Offs gets a slightly muted treatment */
+.seriesCardOneOffs {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.seriesCardOneOffs:hover {
+  opacity: 1;
+}
+
+.seriesCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.seriesCardTitle {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.seriesCardBadges {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.typeBadge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-muted);
+}
+
+.statusBadge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.status_active    { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+.status_paused    { background: rgba(245,158,11,0.15);  color: #fcd34d; }
+.status_completed { background: rgba(99,102,241,0.15);  color: #a5b4fc; }
+
+.seriesConcept {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Status bar ── */
+.statusBar {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-bg-tertiary);
+  display: flex;
+  overflow: hidden;
+  gap: 1px;
+}
+
+.statusSegment {
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.statusBarEmpty {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-bg-tertiary);
+  font-size: 0;
+}
+
+/* ── Card footer ── */
+.seriesCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.videoCount {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.openLink {
+  font-size: var(--text-xs);
+  color: var(--color-accent-primary);
+  font-weight: var(--font-medium);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.seriesCard:hover .openLink {
+  opacity: 1;
+}
