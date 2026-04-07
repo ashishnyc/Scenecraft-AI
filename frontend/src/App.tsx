@@ -7,9 +7,8 @@ import { Sidebar } from './components/Sidebar';
 import { NewWorkspaceModal } from './components/NewWorkspaceModal';
 import { WorkspaceModal } from './components/WorkspaceModal';
 import Tasks from './pages/Tasks';
-import Scripts from './pages/Scripts';
-import VideoReview from './pages/VideoReview';
-import PublishWorkflow from './pages/PublishWorkflow';
+import SeriesDashboard from './pages/SeriesDashboard';
+import VideoTable from './pages/VideoTable';
 import ProjectDetail from './pages/ProjectDetail';
 import Login from './pages/Login';
 import styles from './App.module.css';
@@ -90,12 +89,11 @@ function AppLayout() {
           <TopBar />
           <div className={styles.content}>
             <Routes>
+              <Route path="/dashboard"    element={<SeriesDashboard />} />
+              <Route path="/table"        element={<VideoTable />} />
               <Route path="/tasks"        element={<Tasks />} />
               <Route path="/projects"     element={<ProjectDetail />} />
-              <Route path="/scripts"      element={<Scripts />} />
-              <Route path="/video-review" element={<VideoReview />} />
-              <Route path="/publish"      element={<PublishWorkflow />} />
-              <Route path="*"             element={<Navigate to="/tasks" replace />} />
+              <Route path="*"             element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </div>
         </div>

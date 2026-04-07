@@ -13,7 +13,7 @@ import type { Pitch } from '../api/pitches';
 import { fetchPitches, approvePitch, rejectPitch } from '../api/pitches';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { Toast } from '../components/Toast';
-import { TaskDrawer } from '../components/TaskDrawer';
+import { VideoModal } from '../components/VideoModal';
 import { NewVideoModal } from '../components/NewVideoModal';
 import styles from './Tasks.module.css';
 
@@ -127,7 +127,7 @@ export default function Tasks() {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [drawerTask, setDrawerTask] = useState<Task | null>(null);
+  const [modalTask, setModalTask] = useState<Task | null>(null);
   const [showNewVideo, setShowNewVideo] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -194,7 +194,7 @@ export default function Tasks() {
 
   const handleTaskUpdated = (updated: Task) => {
     setTasks((prev) => prev.map((t) => t.id === updated.id ? updated : t));
-    setDrawerTask(updated);
+    setModalTask(updated);
   };
 
   const handleApprovePitch = async (pitch: Pitch) => {
@@ -278,7 +278,7 @@ export default function Tasks() {
                 </div>
                 <div className={styles.phaseColumns}>
                   {phase.statuses.map((status) => (
-                    <DroppableColumn key={status} status={status} tasks={tasksByStatus[status]} onOpen={setDrawerTask} />
+                    <DroppableColumn key={status} status={status} tasks={tasksByStatus[status]} onOpen={setModalTask} />
                   ))}
                 </div>
               </div>
@@ -291,10 +291,10 @@ export default function Tasks() {
         </DndContext>
       )}
 
-      {drawerTask && (
-        <TaskDrawer
-          task={drawerTask}
-          onClose={() => setDrawerTask(null)}
+      {modalTask && (
+        <VideoModal
+          task={modalTask}
+          onClose={() => setModalTask(null)}
           onUpdated={handleTaskUpdated}
         />
       )}
