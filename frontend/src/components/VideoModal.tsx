@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Task, TaskStatus, OriginalityResult } from '../api/tasks';
-import { STATUS_LABELS, transitionTask, updateTask, generateBrief, checkOriginality } from '../api/tasks';
+import { STATUS_LABELS, updateTask, generateBrief, checkOriginality } from '../api/tasks';
 import styles from './VideoModal.module.css';
 
 // ── Pipeline timeline (grouped by stage) ─────────────────────────────────────
@@ -53,7 +53,7 @@ const STATUS_INDEX: Record<TaskStatus, number> = Object.fromEntries(
 
 // ── Script renderer ───────────────────────────────────────────────────────────
 function ScriptSection({ script }: { script: Record<string, unknown> | null }) {
-  if (!script) return <p className={styles.empty}>No script yet. Approve the video brief to start generation.</p>;
+  if (!script) return <p className={styles.empty}>No script yet. Move to Generate Script to start generation.</p>;
 
   const outline    = script.outline    as Record<string, unknown> | undefined;
   const fullScript = script.full_script as Record<string, unknown> | undefined;
@@ -157,7 +157,7 @@ interface Props {
   onUpdated: (task: Task) => void;
 }
 
-type Tab = 'script' | 'audio' | 'video';
+type Tab = 'script' | 'video';
 
 export function VideoModal({ task, onClose, onUpdated }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('script');
@@ -229,7 +229,6 @@ export function VideoModal({ task, onClose, onUpdated }: Props) {
   };
 
   const hasScript = !!task.script?.outline || !!task.script?.full_script;
-  const hasAudio  = !!task.script?.audio_stems;
   const hasVideo  = !!task.final_video_url;
 
   return (
@@ -329,7 +328,7 @@ export function VideoModal({ task, onClose, onUpdated }: Props) {
               </div>
             </div>
           ) : (
-            <p className={styles.briefText}>{task.concept_brief || <span className={styles.briefMissing}>No brief yet — add one to approve this video</span>}</p>
+            <p className={styles.briefText}>{task.concept_brief || <span className={styles.briefMissing}>No brief yet — add one to submit for review</span>}</p>
           )}
 
           {/* ── Originality check result ── */}
@@ -363,9 +362,8 @@ export function VideoModal({ task, onClose, onUpdated }: Props) {
         {/* ── Content tabs ── */}
         <div className={styles.tabs}>
           {([
-            { id: 'script' as Tab, label: 'Script',  has: hasScript },
-            { id: 'audio'  as Tab, label: 'Audio',   has: hasAudio },
-            { id: 'video'  as Tab, label: 'Video',   has: hasVideo },
+            { id: 'script' as Tab, label: 'Script', has: hasScript },
+            { id: 'video'  as Tab, label: 'Video',  has: hasVideo },
           ]).map(({ id, label, has }) => (
             <button
               key={id}
@@ -381,7 +379,6 @@ export function VideoModal({ task, onClose, onUpdated }: Props) {
         {/* ── Tab content ── */}
         <div className={styles.body}>
           {activeTab === 'script' && <ScriptSection script={task.script} />}
-          {activeTab === 'audio'  && <AudioSection script={task.script} />}
           {activeTab === 'video'  && <VideoSection task={task} />}
         </div>
       </div>

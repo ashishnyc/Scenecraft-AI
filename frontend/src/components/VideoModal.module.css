@@ -117,15 +117,23 @@
 }
 
 /* Status colours */
-.badge_idea          { background: #1e293b; color: #94a3b8; }
-.badge_approved      { background: #0f2a1a; color: #4ade80; }
-.badge_scripting     { background: #1e1a2e; color: #a78bfa; }
-.badge_audio_preview { background: #1e2a1a; color: #86efac; }
-.badge_script_review { background: #2a1a1e; color: #f9a8d4; }
-.badge_producing     { background: #1a1e2a; color: #60a5fa; }
-.badge_final_review  { background: #2a201a; color: #fdba74; }
-.badge_scheduled     { background: #1a2a20; color: #34d399; }
-.badge_published     { background: #1a2a1a; color: #4ade80; }
+/* Stage 1: Idea */
+.badge_brainstorm    { background: #1e1a3a; color: #818cf8; }
+.badge_idea_review   { background: #1e1a3a; color: #a5b4fc; }
+/* Stage 2: Writing */
+.badge_outline          { background: #1e1a2e; color: #a78bfa; }
+.badge_writing_review   { background: #1e1a2e; color: #c4b5fd; }
+/* Stage 3: Scripting */
+.badge_generate_script  { background: #2a1e0a; color: #fbbf24; }
+.badge_script_review    { background: #2a1e0a; color: #fcd34d; }
+/* Stage 4: Video */
+.badge_generate_clips   { background: #0a2a1a; color: #34d399; }
+.badge_assemble_clips   { background: #0a2a1a; color: #6ee7b7; }
+.badge_video_review     { background: #0a2a1a; color: #a7f3d0; }
+/* Stage 5: Upload */
+.badge_prepare_metadata { background: #0a1a2a; color: #60a5fa; }
+.badge_publish          { background: #0a1a2a; color: #93c5fd; }
+.badge_closed           { background: #1a1a1a; color: #6b7280; }
 
 .closeBtn {
   background: none;
