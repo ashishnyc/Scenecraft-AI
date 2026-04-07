@@ -14,24 +14,48 @@ export interface Task {
 }
 
 export type TaskStatus =
-  | 'idea' | 'approved' | 'scripting' | 'audio_preview'
-  | 'script_review' | 'producing' | 'final_review' | 'scheduled' | 'published';
+  | 'brainstorm' | 'idea_review'
+  | 'outline' | 'writing_review'
+  | 'generate_script' | 'script_review'
+  | 'generate_clips' | 'assemble_clips' | 'video_review'
+  | 'prepare_metadata' | 'publish' | 'closed';
 
 export const TASK_STATUSES: TaskStatus[] = [
-  'idea', 'approved', 'scripting', 'audio_preview',
-  'script_review', 'producing', 'final_review', 'scheduled', 'published',
+  'brainstorm', 'idea_review',
+  'outline', 'writing_review',
+  'generate_script', 'script_review',
+  'generate_clips', 'assemble_clips', 'video_review',
+  'prepare_metadata', 'publish', 'closed',
 ];
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
-  idea: 'Idea',
-  approved: 'Approved',
-  scripting: 'Scripting',
-  audio_preview: 'Audio Preview',
-  script_review: 'Script Review',
-  producing: 'Producing',
-  final_review: 'Final Review',
-  scheduled: 'Scheduled',
-  published: 'Published',
+  brainstorm:      'Brainstorm',
+  idea_review:     'Pending Review',
+  outline:         'Outline',
+  writing_review:  'Pending Review',
+  generate_script: 'Generate Script',
+  script_review:   'Pending Review',
+  generate_clips:  'Generate Clips',
+  assemble_clips:  'Assemble Clips',
+  video_review:    'Pending Review',
+  prepare_metadata:'Prepare Metadata',
+  publish:         'Publish',
+  closed:          'Closed',
+};
+
+export const STAGE_LABEL: Record<TaskStatus, string> = {
+  brainstorm:      'Idea',
+  idea_review:     'Idea',
+  outline:         'Writing',
+  writing_review:  'Writing',
+  generate_script: 'Scripting',
+  script_review:   'Scripting',
+  generate_clips:  'Video',
+  assemble_clips:  'Video',
+  video_review:    'Video',
+  prepare_metadata:'Upload',
+  publish:         'Upload',
+  closed:          'Upload',
 };
 
 export async function fetchTasksForWorkspace(workspaceId: string): Promise<Task[]> {

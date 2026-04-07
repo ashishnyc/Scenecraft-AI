@@ -7,21 +7,26 @@ import { VideoModal } from '../components/VideoModal';
 import styles from './SeriesDashboard.module.css';
 
 const PHASE_MAP: Record<TaskStatus, { phase: string; color: string }> = {
-  idea:          { phase: 'Writing',    color: '#6366f1' },
-  approved:      { phase: 'Writing',    color: '#6366f1' },
-  scripting:     { phase: 'Writing',    color: '#818cf8' },
-  audio_preview: { phase: 'Review',     color: '#f59e0b' },
-  script_review: { phase: 'Review',     color: '#f59e0b' },
-  final_review:  { phase: 'Review',     color: '#fbbf24' },
-  producing:     { phase: 'Production', color: '#10b981' },
-  scheduled:     { phase: 'Production', color: '#34d399' },
-  published:     { phase: 'Production', color: '#4ade80' },
+  brainstorm:      { phase: 'Idea',       color: '#6366f1' },
+  idea_review:     { phase: 'Idea',       color: '#818cf8' },
+  outline:         { phase: 'Writing',    color: '#8b5cf6' },
+  writing_review:  { phase: 'Writing',    color: '#a78bfa' },
+  generate_script: { phase: 'Scripting',  color: '#f59e0b' },
+  script_review:   { phase: 'Scripting',  color: '#fbbf24' },
+  generate_clips:  { phase: 'Video',      color: '#10b981' },
+  assemble_clips:  { phase: 'Video',      color: '#34d399' },
+  video_review:    { phase: 'Video',      color: '#4ade80' },
+  prepare_metadata:{ phase: 'Upload',     color: '#3b82f6' },
+  publish:         { phase: 'Upload',     color: '#60a5fa' },
+  closed:          { phase: 'Upload',     color: '#93c5fd' },
 };
 
 const STAGE_GROUPS = [
-  { label: 'Writing',    statuses: ['idea', 'approved', 'scripting'] as TaskStatus[] },
-  { label: 'Review',     statuses: ['audio_preview', 'script_review', 'final_review'] as TaskStatus[] },
-  { label: 'Production', statuses: ['producing', 'scheduled', 'published'] as TaskStatus[] },
+  { label: 'Idea',      statuses: ['brainstorm', 'idea_review'] as TaskStatus[] },
+  { label: 'Writing',   statuses: ['outline', 'writing_review'] as TaskStatus[] },
+  { label: 'Scripting', statuses: ['generate_script', 'script_review'] as TaskStatus[] },
+  { label: 'Video',     statuses: ['generate_clips', 'assemble_clips', 'video_review'] as TaskStatus[] },
+  { label: 'Upload',    statuses: ['prepare_metadata', 'publish', 'closed'] as TaskStatus[] },
 ];
 
 export default function SeriesDashboard() {
@@ -45,9 +50,9 @@ export default function SeriesDashboard() {
   };
 
   const total = tasks.length;
-  const published = tasks.filter(t => t.status === 'published').length;
-  const inProgress = tasks.filter(t => !['idea', 'published'].includes(t.status)).length;
-  const ideas = tasks.filter(t => t.status === 'idea').length;
+  const published = tasks.filter(t => t.status === 'publish' || t.status === 'closed').length;
+  const inProgress = tasks.filter(t => !['brainstorm', 'publish', 'closed'].includes(t.status)).length;
+  const ideas = tasks.filter(t => t.status === 'brainstorm').length;
 
   const recentTasks = [...tasks]
     .sort((a, b) => (a.title > b.title ? 1 : -1))

@@ -3,18 +3,49 @@ import type { Task, TaskStatus, OriginalityResult } from '../api/tasks';
 import { STATUS_LABELS, transitionTask, updateTask, generateBrief, checkOriginality } from '../api/tasks';
 import styles from './VideoModal.module.css';
 
-// ── Pipeline timeline ─────────────────────────────────────────────────────────
-const PIPELINE: { status: TaskStatus; label: string }[] = [
-  { status: 'idea',          label: 'Idea' },
-  { status: 'approved',      label: 'Approved' },
-  { status: 'scripting',     label: 'Script' },
-  { status: 'audio_preview', label: 'Audio' },
-  { status: 'script_review', label: 'Review' },
-  { status: 'producing',     label: 'Producing' },
-  { status: 'final_review',  label: 'Final Review' },
-  { status: 'scheduled',     label: 'Scheduled' },
-  { status: 'published',     label: 'Published' },
+// ── Pipeline timeline (grouped by stage) ─────────────────────────────────────
+const PIPELINE_STAGES: { stage: string; statuses: { status: TaskStatus; label: string }[] }[] = [
+  {
+    stage: 'Idea',
+    statuses: [
+      { status: 'brainstorm',  label: 'Brainstorm' },
+      { status: 'idea_review', label: 'Pending Review' },
+    ],
+  },
+  {
+    stage: 'Writing',
+    statuses: [
+      { status: 'outline',        label: 'Outline' },
+      { status: 'writing_review', label: 'Pending Review' },
+    ],
+  },
+  {
+    stage: 'Scripting',
+    statuses: [
+      { status: 'generate_script', label: 'Generate Script' },
+      { status: 'script_review',   label: 'Pending Review' },
+    ],
+  },
+  {
+    stage: 'Video',
+    statuses: [
+      { status: 'generate_clips', label: 'Generate Clips' },
+      { status: 'assemble_clips', label: 'Assemble Clips' },
+      { status: 'video_review',   label: 'Pending Review' },
+    ],
+  },
+  {
+    stage: 'Upload',
+    statuses: [
+      { status: 'prepare_metadata', label: 'Prepare Metadata' },
+      { status: 'publish',          label: 'Publish' },
+      { status: 'closed',           label: 'Closed' },
+    ],
+  },
 ];
+
+// Flat list for index lookup
+const PIPELINE: { status: TaskStatus; label: string }[] = PIPELINE_STAGES.flatMap(s => s.statuses);
 
 const STATUS_INDEX: Record<TaskStatus, number> = Object.fromEntries(
   PIPELINE.map(({ status }, i) => [status, i])
@@ -237,18 +268,31 @@ export function VideoModal({ task, onClose, onUpdated }: Props) {
 
         {/* ── Pipeline timeline ── */}
         <div className={styles.timeline}>
-          {PIPELINE.map(({ status, label }, idx) => {
-            const done    = idx < currentIdx;
-            const current = idx === currentIdx;
+          {PIPELINE_STAGES.map(({ stage, statuses }) => {
+            const stageStatuses = statuses.map(s => s.status);
+            const stageCurrentIdx = stageStatuses.indexOf(task.status);
+            const stageDone = currentIdx > PIPELINE.findIndex(p => p.status === stageStatuses[stageStatuses.length - 1]);
+            const stageCurrent = stageCurrentIdx !== -1;
             return (
-              <div key={status} className={styles.timelineStep}>
-                <div className={`${styles.timelineDot} ${done ? styles.dotDone : ''} ${current ? styles.dotCurrent : ''}`}>
-                  {done ? '✓' : idx + 1}
+              <div key={stage} className={styles.timelineStage}>
+                <div className={`${styles.timelineStageLabel} ${stageDone ? styles.stageDone : stageCurrent ? styles.stageCurrent : ''}`}>
+                  {stage}
                 </div>
-                <div className={`${styles.timelineLabel} ${current ? styles.labelCurrent : ''}`}>{label}</div>
-                {idx < PIPELINE.length - 1 && (
-                  <div className={`${styles.timelineConnector} ${done ? styles.connectorDone : ''}`} />
-                )}
+                <div className={styles.timelineSubSteps}>
+                  {statuses.map(({ status, label }) => {
+                    const idx = PIPELINE.findIndex(p => p.status === status);
+                    const done    = idx < currentIdx;
+                    const current = idx === currentIdx;
+                    return (
+                      <div key={status} className={styles.timelineStep}>
+                        <div className={`${styles.timelineDot} ${done ? styles.dotDone : ''} ${current ? styles.dotCurrent : ''}`}>
+                          {done ? '✓' : ''}
+                        </div>
+                        <div className={`${styles.timelineLabel} ${current ? styles.labelCurrent : ''}`}>{label}</div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}

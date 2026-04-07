@@ -17,22 +17,27 @@ import styles from './Tasks.module.css';
 
 // ── Next-action hints per status ──────────────────────────────────────────────
 const NEXT_ACTION: Record<TaskStatus, string> = {
-  idea:          'Add video brief to start',
-  approved:      'Drag to Scripting to generate script',
-  scripting:     'AI is writing the script…',
-  audio_preview: 'Review script & audio',
-  script_review: 'Approve or request changes',
-  producing:     'Video production in progress…',
-  final_review:  'Review video & approve',
-  scheduled:     'Set thumbnail & metadata',
-  published:     'Live on YouTube',
+  brainstorm:      'Add video brief to submit for review',
+  idea_review:     'Waiting for approval',
+  outline:         'Write the outline',
+  writing_review:  'Waiting for writing approval',
+  generate_script: 'AI is generating the script…',
+  script_review:   'Review the script',
+  generate_clips:  'AI is generating video clips…',
+  assemble_clips:  'AI is assembling the video…',
+  video_review:    'Review the assembled video',
+  prepare_metadata:'Prepare title, description & thumbnail',
+  publish:         'Publishing to YouTube…',
+  closed:          'Live on YouTube',
 };
 
 // ── Phase groups ──────────────────────────────────────────────────────────────
 const PHASES = [
-  { label: 'Writing',    statuses: ['idea', 'approved', 'scripting'] as TaskStatus[] },
-  { label: 'Review',     statuses: ['audio_preview', 'script_review', 'final_review'] as TaskStatus[] },
-  { label: 'Production', statuses: ['producing', 'scheduled', 'published'] as TaskStatus[] },
+  { label: 'Idea',       statuses: ['brainstorm', 'idea_review'] as TaskStatus[] },
+  { label: 'Writing',    statuses: ['outline', 'writing_review'] as TaskStatus[] },
+  { label: 'Scripting',  statuses: ['generate_script', 'script_review'] as TaskStatus[] },
+  { label: 'Video',      statuses: ['generate_clips', 'assemble_clips', 'video_review'] as TaskStatus[] },
+  { label: 'Upload',     statuses: ['prepare_metadata', 'publish', 'closed'] as TaskStatus[] },
 ];
 
 // Map each status back to its phase
@@ -42,7 +47,7 @@ for (const phase of PHASES) {
 }
 
 // Statuses that indicate active background processing
-const ACTIVE_STATUSES = new Set<TaskStatus>(['scripting', 'audio_preview', 'producing']);
+const ACTIVE_STATUSES = new Set<TaskStatus>(['generate_script', 'generate_clips', 'assemble_clips', 'publish']);
 
 // ── Task card ─────────────────────────────────────────────────────────────────
 interface TaskCardProps {
@@ -70,7 +75,7 @@ function TaskCard({ task, isDragging, onClick, onAdvance }: TaskCardProps) {
             <p className={styles.cardTitle}>{task.title}</p>
             {isActive && <span className={styles.activeDot} title="Processing…" />}
           </div>
-          {!hasBrief && task.status === 'idea' && (
+          {!hasBrief && task.status === 'brainstorm' && (
             <span className={styles.noBriefHint}>needs brief</span>
           )}
           {nextStatus && onAdvance && (

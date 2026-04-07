@@ -145,37 +145,67 @@
 .timeline {
   display: flex;
   align-items: flex-start;
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   overflow-x: auto;
   flex-shrink: 0;
-  gap: 0;
+  gap: var(--space-2);
+}
+
+.timelineStage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 80px;
+}
+
+.timelineStageLabel {
+  font-size: 0.6rem;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.stageDone {
+  color: var(--color-accent-primary);
+}
+
+.stageCurrent {
+  color: var(--color-accent-primary);
+  background: var(--color-accent-subtle);
+}
+
+.timelineSubSteps {
+  display: flex;
+  gap: var(--space-1);
+  align-items: flex-start;
 }
 
 .timelineStep {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
-  flex: 1;
-  min-width: 72px;
+  min-width: 52px;
 }
 
 .timelineDot {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--color-bg-tertiary);
   border: 2px solid var(--color-border);
   color: var(--color-text-muted);
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: var(--font-bold);
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  z-index: 1;
   flex-shrink: 0;
 }
 
@@ -193,32 +223,18 @@
 }
 
 .timelineLabel {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   color: var(--color-text-muted);
-  margin-top: var(--space-1);
+  margin-top: 3px;
   text-align: center;
   white-space: nowrap;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .labelCurrent {
   color: var(--color-accent-primary);
   font-weight: var(--font-semibold);
-}
-
-.timelineConnector {
-  position: absolute;
-  top: 13px;
-  left: calc(50% + 14px);
-  right: calc(-50% + 14px);
-  height: 2px;
-  background: var(--color-border);
-  z-index: 0;
-}
-
-.connectorDone {
-  background: var(--color-accent-primary);
 }
 
 /* ── Brief ── */
