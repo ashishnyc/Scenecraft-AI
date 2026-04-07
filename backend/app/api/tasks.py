@@ -88,7 +88,21 @@ async def update_task(
     if task is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
-    for field, value in body.model_dump(exclude_none=True).items():
+    updates = body.model_dump(exclude_none=True)
+
+    # Append to brief_history when concept_brief changes
+    if "concept_brief" in updates and updates["concept_brief"] != task.concept_brief:
+        from datetime import datetime, timezone
+        history = list(task.brief_history or [])
+        source = getattr(body, "_source", "manual")
+        history.append({
+            "content": updates["concept_brief"],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "source": source,
+        })
+        task.brief_history = history
+
+    for field, value in updates.items():
         setattr(task, field, value)
 
     await db.commit()

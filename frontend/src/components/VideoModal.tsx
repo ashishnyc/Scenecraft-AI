@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Task, TaskStatus, OriginalityResult } from '../api/tasks';
+import type { Task, TaskStatus, OriginalityResult, BriefVersion } from '../api/tasks';
 import { STATUS_LABELS, updateTask, deleteTask, generateBrief, checkOriginality } from '../api/tasks';
 import styles from './VideoModal.module.css';
 
@@ -25,31 +25,50 @@ interface IdeaTabProps {
   onUpdated: (t: Task) => void;
 }
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
 function IdeaTab({ task, onUpdated }: IdeaTabProps) {
-  const [editingBrief, setEditingBrief] = useState(false);
-  const [brief, setBrief] = useState(task.concept_brief ?? '');
-  const [savingBrief, setSavingBrief] = useState(false);
-  const [generatingBrief, setGeneratingBrief] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(task.concept_brief ?? '');
+  const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [originality, setOriginality] = useState<OriginalityResult | null>(null);
   const [checkingOriginality, setCheckingOriginality] = useState(false);
+  const [history, setHistory] = useState<BriefVersion[]>(task.brief_history ?? []);
+
+  const handleEdit = () => {
+    setDraft(task.concept_brief ?? '');
+    setEditing(true);
+  };
+
+  const handleCancel = () => {
+    setDraft(task.concept_brief ?? '');
+    setEditing(false);
+  };
 
   const handleGenerateBrief = async () => {
-    setGeneratingBrief(true);
+    setGenerating(true);
     try {
       const generated = await generateBrief(task.id);
-      setBrief(generated);
-      setEditingBrief(true);
+      setDraft(generated);
     } finally {
-      setGeneratingBrief(false);
+      setGenerating(false);
     }
   };
 
-  const handleSaveBrief = async () => {
-    setSavingBrief(true);
+  const handleSave = async () => {
+    if (draft === task.concept_brief) { setEditing(false); return; }
+    setSaving(true);
     try {
-      const updated = await updateTask(task.id, { concept_brief: brief });
+      const source = generating ? 'ai' : 'manual';
+      const updated = await updateTask(task.id, { concept_brief: draft, _source: source });
       onUpdated(updated);
-      setEditingBrief(false);
+      setHistory(updated.brief_history ?? []);
+      setEditing(false);
       setCheckingOriginality(true);
       try {
         const result = await checkOriginality(updated.id);
@@ -58,40 +77,55 @@ function IdeaTab({ task, onUpdated }: IdeaTabProps) {
         setCheckingOriginality(false);
       }
     } finally {
-      setSavingBrief(false);
+      setSaving(false);
     }
   };
 
+  const versions = [...history].reverse();
+
   return (
     <div className={styles.tabContent}>
-      <div className={styles.sectionLabel}>Video Brief</div>
-      <div className={styles.briefHeader}>
-        <button className={styles.briefAiBtn} onClick={handleGenerateBrief} disabled={generatingBrief}>
-          {generatingBrief ? 'Writing…' : '✦ Write with AI'}
-        </button>
-        {!editingBrief && (
-          <button className={styles.briefEdit} onClick={() => setEditingBrief(true)}>Edit</button>
+      {/* ── Current brief ── */}
+      <div className={styles.briefCard}>
+        <div className={styles.briefCardHeader}>
+          <span className={styles.sectionLabel}>Video Brief</span>
+          {!editing && (
+            <button className={styles.briefEdit} onClick={handleEdit}>Edit</button>
+          )}
+        </div>
+
+        {editing ? (
+          <>
+            <div className={styles.briefEditActions}>
+              <button className={styles.briefAiBtn} onClick={handleGenerateBrief} disabled={generating}>
+                {generating ? 'Writing…' : '✦ Write with AI'}
+              </button>
+            </div>
+            <textarea
+              className={styles.briefTextarea}
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              rows={5}
+              autoFocus
+            />
+            <div className={styles.briefActions}>
+              <button className={styles.briefSave} onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              <button className={styles.briefCancel} onClick={handleCancel}>Cancel</button>
+            </div>
+          </>
+        ) : (
+          <p className={styles.briefText}>
+            {task.concept_brief
+              ? task.concept_brief
+              : <span className={styles.briefMissing}>No brief yet — click Edit to add one</span>
+            }
+          </p>
         )}
       </div>
 
-      {editingBrief ? (
-        <div className={styles.briefEditRow}>
-          <textarea className={styles.briefTextarea} value={brief} onChange={e => setBrief(e.target.value)} rows={4} />
-          <div className={styles.briefActions}>
-            <button className={styles.briefSave} onClick={handleSaveBrief} disabled={savingBrief}>
-              {savingBrief ? 'Saving…' : 'Save'}
-            </button>
-            <button className={styles.briefCancel} onClick={() => { setEditingBrief(false); setBrief(task.concept_brief ?? ''); }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p className={styles.briefText}>
-          {task.concept_brief || <span className={styles.briefMissing}>No brief yet — add one to submit for review</span>}
-        </p>
-      )}
-
+      {/* ── Originality ── */}
       {checkingOriginality && <div className={styles.originalityChecking}>Checking originality…</div>}
       {originality && !checkingOriginality && (
         <div className={`${styles.originalityResult} ${originality.low_originality ? styles.originalityLow : styles.originalityHigh}`}>
@@ -111,6 +145,30 @@ function IdeaTab({ task, onUpdated }: IdeaTabProps) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Version history timeline ── */}
+      {versions.length > 0 && (
+        <div className={styles.historySection}>
+          <div className={styles.sectionLabel}>Version History</div>
+          <div className={styles.historyTimeline}>
+            {versions.map((v, i) => (
+              <div key={i} className={styles.historyItem}>
+                <div className={styles.historyDot} />
+                <div className={styles.historyLine} />
+                <div className={styles.historyBody}>
+                  <div className={styles.historyMeta}>
+                    <span className={`${styles.historySource} ${v.source === 'ai' ? styles.historySourceAi : ''}`}>
+                      {v.source === 'ai' ? '✦ AI' : 'Manual'}
+                    </span>
+                    <span className={styles.historyDate}>{formatDate(v.created_at)}</span>
+                  </div>
+                  <p className={styles.historyContent}>{v.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

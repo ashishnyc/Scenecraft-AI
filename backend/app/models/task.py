@@ -38,6 +38,7 @@ class Task(Base):
     concept_brief: Mapped[str | None] = mapped_column(Text, nullable=True)
     creator_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     script: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    brief_history: Mapped[list | None] = mapped_column(JSONB, nullable=True, default=list)
     final_video_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     youtube_video_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     performance_metrics: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
