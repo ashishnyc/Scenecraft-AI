@@ -9,11 +9,8 @@ import styles from './Sidebar.module.css';
 
 // Workspace-level nav (always visible)
 const WORKSPACE_NAV = [
-  { to: '/',          label: 'Dashboard',     icon: '▦' },
-  { to: '/talent',    label: 'Talent Roster', icon: '◉' },
-  { to: '/analytics', label: 'Analytics',     icon: '∿' },
-  { to: '/instagram', label: 'Instagram',     icon: '⬡' },
-  { to: '/settings',  label: 'Settings',      icon: '⚙' },
+  { to: '/',       label: 'Dashboard',     icon: '▦' },
+  { to: '/talent', label: 'Talent Roster', icon: '◉' },
 ];
 
 // Series pipeline nav (only when a series is selected)

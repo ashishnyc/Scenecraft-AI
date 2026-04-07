@@ -5,6 +5,7 @@ import { WorkspaceProvider, useWorkspace } from './context/WorkspaceContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { Sidebar } from './components/Sidebar';
 import { NewWorkspaceModal } from './components/NewWorkspaceModal';
+import { WorkspaceModal } from './components/WorkspaceModal';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Scripts from './pages/Scripts';
@@ -62,6 +63,24 @@ function WorkspaceSwitcher() {
   );
 }
 
+function TopBar() {
+  const [wsModalOpen, setWsModalOpen] = useState(false);
+  return (
+    <div className={styles.topBar}>
+      <button
+        className={styles.cogBtn}
+        onClick={() => setWsModalOpen(true)}
+        aria-label="Workspace settings"
+        title="Analytics, Instagram & Settings"
+      >
+        ⚙
+      </button>
+      <WorkspaceSwitcher />
+      {wsModalOpen && <WorkspaceModal onClose={() => setWsModalOpen(false)} />}
+    </div>
+  );
+}
+
 function AppLayout() {
   const { isAuthenticated } = useAuth();
 
@@ -73,9 +92,7 @@ function AppLayout() {
       <div className={styles.shell}>
         <Sidebar />
         <div className={styles.main}>
-          <div className={styles.topBar}>
-            <WorkspaceSwitcher />
-          </div>
+          <TopBar />
           <div className={styles.content}>
             <Routes>
               <Route path="/"             element={<Dashboard />} />
