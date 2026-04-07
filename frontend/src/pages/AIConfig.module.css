@@ -1,18 +1,26 @@
-/* ── AI Configuration section ─────────────────────────────────────────────── */
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
 .section {
-  margin-top: var(--space-10);
+  margin-top: var(--space-8);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .sectionTitle {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
   margin-bottom: var(--space-1);
 }
 
 .sectionDesc {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-6);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
 }
 
 .loading {
@@ -20,11 +28,26 @@
   color: var(--color-text-muted);
 }
 
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
+.empty {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  padding: var(--space-4) 0;
 }
+
+/* ── Add button ── */
+.addBtn {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: 1px solid var(--color-accent-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-primary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.addBtn:hover { background: var(--color-accent-subtle); }
 
 /* ── Card ── */
 .card {
@@ -35,6 +58,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .cardTitle {
@@ -49,15 +73,129 @@
   margin-top: calc(-1 * var(--space-2));
 }
 
-/* ── Row / Field ── */
+/* ── Config list ── */
+.configList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.configCard {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.configCardDefault {
+  border-color: var(--color-accent-primary);
+}
+
+.configCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.configCardName {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.defaultBadge {
+  font-size: 0.6rem;
+  font-weight: var(--font-bold);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent-primary);
+  border: 1px solid var(--color-accent-primary);
+  border-radius: var(--radius-full);
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.configCardMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-size: var(--text-xs);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 2px 8px;
+  color: var(--color-text-secondary);
+}
+
+.pillMuted {
+  composes: pill;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+}
+
+.configCardActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.actionBtn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.actionBtn:hover { border-color: var(--color-accent-primary); color: var(--color-accent-primary); }
+
+.actionBtnDanger {
+  composes: actionBtn;
+  color: var(--color-error);
+  border-color: transparent;
+}
+.actionBtnDanger:hover { border-color: var(--color-error); color: var(--color-error); }
+
+.deleteConfirm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.deleteErr {
+  color: var(--color-error);
+  font-size: var(--text-xs);
+}
+
+/* ── Model form ── */
+.modelForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
 .row {
   display: flex;
   gap: var(--space-4);
 }
-
-.row > .field {
-  flex: 1;
-}
+.row > .field { flex: 1; }
 
 .field {
   display: flex;
@@ -86,19 +224,42 @@
   width: 100%;
   box-sizing: border-box;
 }
+.input:focus, .select:focus { outline: none; border-color: var(--color-accent-primary); }
 
-.input:focus,
-.select:focus {
-  outline: none;
-  border-color: var(--color-accent-primary);
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
 }
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cancelBtn {
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.cancelBtn:hover { border-color: var(--color-text-secondary); }
 
 /* ── Test connection ── */
 .testRow {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding-top: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-4) 0;
   border-top: 1px solid var(--color-border);
 }
 
@@ -112,86 +273,51 @@
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
+.testBtn:hover:not(:disabled) { border-color: var(--color-accent-primary); color: var(--color-accent-primary); }
+.testBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.testBtn:hover:not(:disabled) {
-  border-color: var(--color-accent-primary);
-  color: var(--color-accent-primary);
-}
+.testOk  { font-size: var(--text-sm); color: #4ade80; }
+.testErr { font-size: var(--text-sm); color: var(--color-error); }
 
-.testBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.testOk {
-  font-size: var(--text-sm);
-  color: #4ade80;
-}
-
-.testErr {
-  font-size: var(--text-sm);
-  color: var(--color-error);
-}
-
-/* ── Per-feature overrides ── */
-.featureList {
+/* ── Feature overrides table ── */
+.featureTable {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  margin-top: var(--space-4);
 }
 
-.featureItem {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.featureHeader {
-  width: 100%;
+.featureRow {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
-  background: var(--color-bg-tertiary);
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  transition: background 0.15s;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
-.featureHeader:hover {
-  background: var(--color-bg-hover);
-}
-
-.featureLabel {
+.featureRowLabel {
   flex: 1;
   font-size: var(--text-sm);
   color: var(--color-text-primary);
 }
 
-.featureBadge {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
+.featureSelect {
+  width: 200px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-3);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  cursor: pointer;
 }
+.featureSelect:focus { outline: none; border-color: var(--color-accent-primary); }
+.featureSelect:disabled { opacity: 0.5; }
 
-.featureDefault {
+.saving {
   color: var(--color-text-muted);
   font-style: italic;
-}
-
-.featureChevron {
-  font-size: 0.6rem;
-  color: var(--color-text-muted);
-  flex-shrink: 0;
-}
-
-.featureBody {
-  padding: var(--space-4);
-  background: var(--color-bg-primary);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
 }

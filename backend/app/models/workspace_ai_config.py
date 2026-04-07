@@ -1,7 +1,7 @@
-"""Per-workspace AI configuration with per-feature model overrides."""
+"""Per-workspace AI configuration — maps features to named model configs."""
 import uuid
 from datetime import datetime
-from sqlalchemy import String, DateTime, ForeignKey, Text, func
+from sqlalchemy import DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,15 +16,12 @@ class WorkspaceAIConfig(Base):
         UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), unique=True, nullable=False
     )
 
-    # Default provider: "ollama" | "openai" | "anthropic"
-    provider: Mapped[str] = mapped_column(String(50), nullable=False, default="ollama")
-    model: Mapped[str] = mapped_column(String(255), nullable=False, default="kimi-k2.5:cloud")
-    base_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    # Encrypted API key (None for Ollama which needs no key)
-    api_key_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # The default named config used when no feature override is set (nullable = fall back to .env)
+    default_config_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspace_ai_model_configs.id", ondelete="SET NULL"), nullable=True
+    )
 
-    # Per-feature overrides stored as JSONB.
-    # Shape: { "feature_name": { "provider": "...", "model": "...", "base_url": "...", "api_key_encrypted": "..." } }
+    # Per-feature overrides: { "outline_generation": "<config_uuid>", ... }
     feature_overrides: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     updated_at: Mapped[datetime] = mapped_column(
@@ -32,3 +29,6 @@ class WorkspaceAIConfig(Base):
     )
 
     workspace: Mapped["Workspace"] = relationship("Workspace", back_populates="ai_config")
+    default_config: Mapped["WorkspaceAIModelConfig | None"] = relationship(
+        "WorkspaceAIModelConfig", foreign_keys=[default_config_id]
+    )

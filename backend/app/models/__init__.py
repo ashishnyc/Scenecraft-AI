@@ -11,3 +11,4 @@ from app.models.trending_topic import TrendingTopic  # noqa: F401
 from app.models.pitch import Pitch  # noqa: F401
 from app.models.instagram import InstagramPost, InstagramComment  # noqa: F401
 from app.models.workspace_ai_config import WorkspaceAIConfig  # noqa: F401
+from app.models.workspace_ai_model_config import WorkspaceAIModelConfig  # noqa: F401
