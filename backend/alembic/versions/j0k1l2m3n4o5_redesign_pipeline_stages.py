@@ -33,10 +33,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 1. Convert status column to plain text so we can drop the old enum
+    # 1. Drop the column default so the type is no longer referenced
+    op.execute("ALTER TABLE tasks ALTER COLUMN status DROP DEFAULT")
+
+    # 2. Convert status column to plain text so we can drop the old enum
     op.execute("ALTER TABLE tasks ALTER COLUMN status TYPE TEXT")
 
-    # 2. Drop the old enum type
+    # 3. Drop the old enum type
     op.execute("DROP TYPE taskstatus")
 
     # 3. Map old values to new values
