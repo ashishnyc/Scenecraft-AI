@@ -77,7 +77,23 @@ async def list_projects(
     result = await db.execute(
         select(Project).where(Project.workspace_id == workspace_id).order_by(Project.name)
     )
-    return result.scalars().all()
+    projects = result.scalars().all()
+
+    # Ensure every workspace always has a "One-Offs" catch-all series
+    if not any(p.name == "One-Offs" for p in projects):
+        from app.models.project import ProjectType
+        one_offs = Project(
+            id=uuid.uuid4(),
+            workspace_id=workspace_id,
+            name="One-Offs",
+            type=ProjectType.anthology,
+            story_bible={"series_concept": "Standalone videos that don't belong to a specific series."},
+        )
+        db.add(one_offs)
+        await db.commit()
+        projects = list(projects) + [one_offs]
+
+    return projects
 
 
 class ConceptGenerateRequest(BaseModel):
