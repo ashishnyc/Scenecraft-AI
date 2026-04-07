@@ -194,11 +194,25 @@
   line-height: 1.4;
 }
 
+/* ── Card body: left content + right timeline ── */
+.cardBody {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.cardLeft {
+  flex: 1;
+  min-width: 0;
+}
+
 /* ── Card mini timeline ── */
 .cardTimeline {
-  margin-top: var(--space-2);
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  border-left: 1px solid var(--color-border);
+  padding-left: var(--space-3);
 }
 
 .cardTimelineRow {

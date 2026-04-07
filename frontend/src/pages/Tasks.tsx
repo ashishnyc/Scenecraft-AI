@@ -62,36 +62,39 @@ function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
       className={`${styles.card} ${isDragging ? styles.cardDragging : ''}`}
       onClick={onClick}
     >
-      <div className={styles.cardHeader}>
-        <p className={styles.cardTitle}>{task.title}</p>
-        {isActive && <span className={styles.activeDot} title="Processing…" />}
-      </div>
+      <div className={styles.cardBody}>
+        <div className={styles.cardLeft}>
+          <div className={styles.cardHeader}>
+            <p className={styles.cardTitle}>{task.title}</p>
+            {isActive && <span className={styles.activeDot} title="Processing…" />}
+          </div>
+          {!hasBrief && task.status === 'idea' && (
+            <span className={styles.noBriefHint}>needs brief</span>
+          )}
+        </div>
 
-      {/* Mini vertical pipeline timeline */}
-      <div className={styles.cardTimeline}>
-        {phase.statuses.map((s, idx) => {
-          const done    = idx < currentIdx;
-          const current = idx === currentIdx;
-          const isLast  = idx === phase.statuses.length - 1;
-          return (
-            <div key={s} className={styles.cardTimelineRow}>
-              <div className={styles.cardTimelineLeft}>
-                <div className={`${styles.cardTlDot} ${done ? styles.cardTlDotDone : current ? styles.cardTlDotCurrent : ''}`}>
-                  {done && <span className={styles.cardTlCheck}>✓</span>}
+        {/* Mini vertical pipeline timeline — right side */}
+        <div className={styles.cardTimeline}>
+          {phase.statuses.map((s, idx) => {
+            const done    = idx < currentIdx;
+            const current = idx === currentIdx;
+            const isLast  = idx === phase.statuses.length - 1;
+            return (
+              <div key={s} className={styles.cardTimelineRow}>
+                <div className={styles.cardTimelineLeft}>
+                  <div className={`${styles.cardTlDot} ${done ? styles.cardTlDotDone : current ? styles.cardTlDotCurrent : ''}`}>
+                    {done && <span className={styles.cardTlCheck}>✓</span>}
+                  </div>
+                  {!isLast && <div className={styles.cardTlLine} />}
                 </div>
-                {!isLast && <div className={styles.cardTlLine} />}
+                <span className={`${styles.cardTlLabel} ${done ? styles.cardTlLabelDone : current ? styles.cardTlLabelCurrent : ''}`}>
+                  {STATUS_LABELS[s]}
+                </span>
               </div>
-              <span className={`${styles.cardTlLabel} ${done ? styles.cardTlLabelDone : current ? styles.cardTlLabelCurrent : ''}`}>
-                {STATUS_LABELS[s]}
-              </span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-
-      {!hasBrief && task.status === 'idea' && (
-        <span className={styles.noBriefHint}>needs brief</span>
-      )}
     </div>
   );
 }
