@@ -151,17 +151,20 @@ async def generate_outline(
     style_guide: dict,
     cast_names: list[str],
     story_bible: dict | None = None,
+    db=None,
+    workspace_id=None,
 ) -> dict[str, Any] | None:
     """
-    Call Claude to produce a 3-act outline for the given task.
+    Call the LLM to produce a 3-act outline for the given task.
     For serialised projects, pass *story_bible* to inject series continuity.
     Returns the validated outline dict, or None on failure.
     """
-    from app.services.llm_client import llm_chat
+    from app.services.llm_client import llm_chat, resolve_ai_config
 
+    config = await resolve_ai_config(workspace_id, "outline_generation", db) if db and workspace_id else None
     user_prompt = _build_prompt(concept_brief, creator_notes, style_guide, cast_names, story_bible)
 
-    raw = llm_chat(system=SYSTEM_PROMPT, user=user_prompt, max_tokens=4096)
+    raw = llm_chat(system=SYSTEM_PROMPT, user=user_prompt, max_tokens=4096, config=config)
     if raw is None:
         logger.warning("LLM unavailable — skipping outline generation for task %s", task_id)
         return None

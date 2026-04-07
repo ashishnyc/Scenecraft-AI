@@ -35,13 +35,13 @@ _COLLECTION = "editorial_memory"
 _MODEL = "claude-haiku-4-5-20251001"
 
 
-async def extract_preferences_from_review(task_id: str) -> dict[str, Any] | None:
+async def extract_preferences_from_review(task_id: str, workspace_id=None) -> dict[str, Any] | None:
     """
     Analyse a completed task's review history and extract preference signals.
 
     Returns a preference dict or None if insufficient data.
     """
-    from app.services.llm_client import llm_chat
+    from app.services.llm_client import llm_chat, resolve_ai_config
 
     async for db in get_db():
         row = (await db.execute(select(Task).where(Task.id == task_id))).scalar_one_or_none()
@@ -99,7 +99,8 @@ Return a JSON object with these optional keys (only include keys where the notes
 Return only the JSON object."""
 
     try:
-        raw = llm_chat(system="You are an editorial analyst. Return only JSON.", user=prompt, max_tokens=512)
+        config = await resolve_ai_config(workspace_id, "editorial_memory", db) if workspace_id else None
+        raw = llm_chat(system="You are an editorial analyst. Return only JSON.", user=prompt, max_tokens=512, config=config)
         if raw is None:
             return None
         raw = raw.strip()

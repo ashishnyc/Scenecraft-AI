@@ -118,12 +118,15 @@ async def plan_shots(
     task_id: str,
     full_script: dict,
     audio_stems: dict | None,
+    db=None,
+    workspace_id=None,
 ) -> dict[str, Any] | None:
     """Generate a shot list for *full_script*. Returns ShotList dict or None."""
-    from app.services.llm_client import llm_chat
+    from app.services.llm_client import llm_chat, resolve_ai_config
 
+    config = await resolve_ai_config(workspace_id, "scene_planning", db) if db and workspace_id else None
     prompt = _build_prompt(full_script, audio_stems)
-    raw = llm_chat(system=SYSTEM_PROMPT, user=prompt, max_tokens=8192)
+    raw = llm_chat(system=SYSTEM_PROMPT, user=prompt, max_tokens=8192, config=config)
     if raw is None:
         logger.warning("LLM unavailable — skipping scene planner for task %s", task_id)
         return None

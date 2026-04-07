@@ -135,6 +135,8 @@ async def expand_scenes(
     task_id: str,
     outline: dict,
     cast_profiles: dict[str, str | None],
+    db=None,
+    workspace_id=None,
 ) -> dict[str, Any] | None:
     """
     Expand every scene in *outline* into full screenplay format.
@@ -143,7 +145,9 @@ async def expand_scenes(
 
     Returns ``{"scenes": [...]}`` on success, or ``None`` on any failure.
     """
-    from app.services.llm_client import llm_chat
+    from app.services.llm_client import llm_chat, resolve_ai_config
+
+    config = await resolve_ai_config(workspace_id, "scene_expansion", db) if db and workspace_id else None
 
     cast_names = list(cast_profiles.keys())
     scenes_flat: list[dict] = [
@@ -161,7 +165,7 @@ async def expand_scenes(
     for scene in scenes_flat:
         prompt = _build_scene_prompt(scene, cast_profiles, expanded)
 
-        raw = llm_chat(system=SYSTEM_PROMPT, user=prompt, max_tokens=2048)
+        raw = llm_chat(system=SYSTEM_PROMPT, user=prompt, max_tokens=2048, config=config)
         if raw is None:
             logger.error("LLM unavailable for scene %s (task %s)", scene.get("scene_number"), task_id)
             return None

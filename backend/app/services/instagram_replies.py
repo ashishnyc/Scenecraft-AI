@@ -159,12 +159,17 @@ async def generate_reply(comment_id: str) -> str | None:
             await db.commit()
             return None
 
-        from app.services.llm_client import llm_chat
+        from app.services.llm_client import llm_chat, resolve_ai_config
 
         # Load character context
         post = (await db.execute(
             select(InstagramPost).where(InstagramPost.id == comment.post_id)
         )).scalar_one_or_none()
+
+        config = await resolve_ai_config(
+            post.workspace_id if post and hasattr(post, "workspace_id") else None,
+            "instagram_replies", db
+        )
 
         character_context = ""
         if post and post.character_id:
@@ -187,7 +192,7 @@ Be genuine, personal, and avoid sounding like a bot. No hashtags. No links.
 Return only the reply text."""
 
         try:
-            reply_raw = llm_chat(system="You are a social media personality. Reply naturally.", user=prompt, max_tokens=128)
+            reply_raw = llm_chat(system="You are a social media personality. Reply naturally.", user=prompt, max_tokens=128, config=config)
             if reply_raw is None:
                 return None
             reply_text = reply_raw.strip().strip('"')

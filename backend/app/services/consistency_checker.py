@@ -104,6 +104,8 @@ async def check_consistency(
     outline: dict,
     *,
     _retry: int = 0,
+    db=None,
+    workspace_id=None,
 ) -> dict[str, Any] | None:
     """
     Run a consistency check over *full_script*.
@@ -114,10 +116,11 @@ async def check_consistency(
     Returns the final ``ConsistencyReport`` dict (flags may be empty), or
     ``None`` on LLM failure.
     """
-    from app.services.llm_client import llm_chat
+    from app.services.llm_client import llm_chat, resolve_ai_config
 
+    config = await resolve_ai_config(workspace_id, "consistency_check", db) if db and workspace_id else None
     prompt = _build_check_prompt(full_script, style_guide)
-    raw = llm_chat(system=SYSTEM_PROMPT, user=prompt, max_tokens=2048)
+    raw = llm_chat(system=SYSTEM_PROMPT, user=prompt, max_tokens=2048, config=config)
     if raw is None:
         logger.warning("LLM unavailable — skipping consistency check for task %s", task_id)
         return None
@@ -154,6 +157,8 @@ async def check_consistency(
             task_id=task_id,
             outline=blocker_outline,
             cast_profiles=cast_profiles,
+            db=db,
+            workspace_id=workspace_id,
         )
         if regenerated:
             # Merge regenerated scenes back into the full script
@@ -166,7 +171,8 @@ async def check_consistency(
 
             # One more consistency pass on the updated script
             return await check_consistency(
-                task_id, full_script, style_guide, cast_profiles, outline, _retry=_retry + 1
+                task_id, full_script, style_guide, cast_profiles, outline,
+                _retry=_retry + 1, db=db, workspace_id=workspace_id,
             )
 
     return report.model_dump()

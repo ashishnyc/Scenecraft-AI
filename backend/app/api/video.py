@@ -11,8 +11,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user_id
 from app.core.config import get_settings
+from app.db.postgres import get_db
 from app.db.s3 import get_s3_client
 
 router = APIRouter(tags=["video"])
@@ -306,12 +308,22 @@ async def select_thumbnail(
 @router.post("/tasks/{task_id}/metadata/generate")
 async def generate_metadata(
     task_id: str,
+    db: AsyncSession = Depends(get_db),
     _user_id: str = Depends(get_current_user_id),
 ) -> dict[str, Any]:
     """LLM-pre-fill YouTube title, description, and tags."""
     from app.services.metadata_generator import generate_youtube_metadata
+    from app.models.task import Task
+    from app.models.project import Project
 
-    result = await generate_youtube_metadata(task_id)
+    task = await db.get(Task, task_id)
+    workspace_id = None
+    if task:
+        project = await db.get(Project, task.project_id)
+        if project:
+            workspace_id = project.workspace_id
+
+    result = await generate_youtube_metadata(task_id, workspace_id=workspace_id)
     if result is None:
         raise HTTPException(status_code=503, detail="Metadata generation failed")
     return result

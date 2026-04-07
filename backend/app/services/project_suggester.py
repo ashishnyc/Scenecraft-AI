@@ -5,6 +5,8 @@ import json
 import logging
 import re
 
+from app.services.llm_client import AIConfig
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """\
@@ -35,7 +37,6 @@ Rules:
 
 def _parse_response(raw: str) -> dict:
     text = raw.strip()
-    # Strip markdown fences if present
     text = re.sub(r"^```(?:json)?\s*", "", text)
     text = re.sub(r"\s*```$", "", text.strip())
     data = json.loads(text)
@@ -74,7 +75,7 @@ No markdown, no text outside the JSON array.
 """
 
 
-def suggest_project(brief: str) -> dict | None:
+def suggest_project(brief: str, config: AIConfig | None = None) -> dict | None:
     """
     Call the LLM with a free-text brief and return suggested project metadata.
     Returns dict with keys: name, series_concept, video_concepts (list of {title, concept}).
@@ -90,6 +91,7 @@ def suggest_project(brief: str) -> dict | None:
         user=f"Channel concept:\n{brief.strip()}",
         max_tokens=1024,
         temperature=0.8,
+        config=config,
     )
     if raw is None:
         logger.warning("LLM unavailable — cannot generate project suggestions")
@@ -106,6 +108,7 @@ def generate_concepts(
     brief: str,
     series_concept: str,
     existing_concepts: list[dict],
+    config: AIConfig | None = None,
 ) -> list[dict] | None:
     """
     Generate additional episode concepts for an existing series.
@@ -128,6 +131,7 @@ def generate_concepts(
         user=user_msg,
         max_tokens=1024,
         temperature=0.85,
+        config=config,
     )
     if raw is None:
         logger.warning("LLM unavailable — cannot generate episode concepts")

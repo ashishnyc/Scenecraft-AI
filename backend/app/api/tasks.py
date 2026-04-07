@@ -134,6 +134,8 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
             style_guide=style_guide,
             cast_names=cast_names,
             story_bible=story_bible,
+            db=db,
+            workspace_id=project.workspace_id,
         )
         if outline is None:
             return
@@ -148,6 +150,8 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
             task_id=str(task.id),
             outline=outline,
             cast_profiles=cast_profiles,
+            db=db,
+            workspace_id=project.workspace_id,
         )
         if full_script is None:
             return
@@ -164,6 +168,8 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
             style_guide=style_guide,
             cast_profiles=cast_profiles,
             outline=outline,
+            db=db,
+            workspace_id=project.workspace_id,
         )
         if consistency_report is not None:
             current_script = dict(task.script or {})
@@ -176,6 +182,7 @@ async def _run_outline_for_task(task_id: uuid.UUID) -> None:
             task_id=str(task.id),
             full_script=full_script,
             workspace_id=str(project.workspace_id),
+            db=db,
         )
         if scan_result is not None:
             updated_full_script, copyright_report = scan_result
@@ -390,6 +397,8 @@ async def _update_story_bible_for_task(task_id: uuid.UUID) -> None:
             full_script=full_script,
             existing_bible=project.story_bible,
             episode_number=episode_number,
+            db=db,
+            workspace_id=project.workspace_id,
         )
         if new_events is not None:
             project.story_bible = merge_bible(project.story_bible, new_events)
@@ -452,7 +461,7 @@ async def _run_video_pipeline(task_id: uuid.UUID) -> None:
         reference_prompts = build_cast_reference_prompts(cast)
 
         # SA-30: plan shots
-        shot_list = await plan_shots(str(task_id), full_script, audio_stems)
+        shot_list = await plan_shots(str(task_id), full_script, audio_stems, db=db, workspace_id=project.workspace_id)
         if shot_list is None:
             return
 

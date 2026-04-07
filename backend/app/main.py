@@ -22,6 +22,7 @@ from app.api.pitches import router as pitches_router
 from app.api.audio import router as audio_router
 from app.api.video import router as video_router
 from app.api.instagram import router as instagram_router
+from app.api.ai_config import router as ai_config_router
 from app.services.scheduler import start_scheduler, stop_scheduler
 from app.core.security import add_security_headers, validate_secrets_at_startup
 
@@ -103,6 +104,7 @@ app.include_router(pitches_router)
 app.include_router(audio_router)
 app.include_router(video_router)
 app.include_router(instagram_router)
+app.include_router(ai_config_router)
 
 
 @app.get("/health")
