@@ -57,7 +57,24 @@ export async function createTask(projectId: string, title: string, conceptBrief?
   return res.data;
 }
 
-export async function updateTask(taskId: string, body: { concept_brief?: string; creator_notes?: string }): Promise<Task> {
+export async function updateTask(taskId: string, body: { title?: string; concept_brief?: string; creator_notes?: string }): Promise<Task> {
   const res = await apiClient.put<Task>(`/tasks/${taskId}`, body);
+  return res.data;
+}
+
+export async function generateBrief(taskId: string): Promise<string> {
+  const res = await apiClient.post<{ concept_brief: string }>(`/tasks/${taskId}/generate-brief`);
+  return res.data.concept_brief;
+}
+
+export interface OriginalityResult {
+  originality_score: number;
+  max_similarity: number;
+  low_originality: boolean;
+  similar_videos: { title: string; video_id: string; score: number }[];
+}
+
+export async function checkOriginality(taskId: string): Promise<OriginalityResult> {
+  const res = await apiClient.post<OriginalityResult>(`/tasks/${taskId}/check-originality`);
   return res.data;
 }
