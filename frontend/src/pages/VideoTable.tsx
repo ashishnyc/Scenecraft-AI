@@ -164,7 +164,12 @@ export default function VideoTable() {
       )}
 
       {modalTask && (
-        <VideoModal task={modalTask} onClose={() => setModalTask(null)} onUpdated={handleTaskUpdated} />
+        <VideoModal
+          task={modalTask}
+          onClose={() => setModalTask(null)}
+          onUpdated={handleTaskUpdated}
+          onDeleted={(id) => { setTasks(prev => prev.filter(t => t.id !== id)); setModalTask(null); }}
+        />
       )}
 
       {showNewVideo && (
